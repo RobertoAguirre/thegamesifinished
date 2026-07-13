@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: thegamesifinished
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: node apps/web/build/index.js
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: PUBLIC_CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: RAWG_API_KEY
+        sync: false
+      - key: ORIGIN
+        sync: false
+      - key: PORT
+        value: 10000

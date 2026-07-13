@@ -1,0 +1,29 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+
+@theme {
+	--font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+	--color-bg: #07070d;
+	--color-surface: #11111a;
+	--color-surface-hover: #1a1a27;
+	--color-border: #252536;
+	--color-muted: #8b8ba3;
+	--color-accent: #7c5cff;
+	--color-accent-hover: #9278ff;
+	--color-success: #34d399;
+}
+
+html {
+	color-scheme: dark;
+}
+
+body {
+	@apply bg-bg text-white font-sans antialiased min-h-screen;
+	background-image:
+		radial-gradient(ellipse 80% 50% at 50% -20%, rgba(124, 92, 255, 0.15), transparent),
+		radial-gradient(ellipse 60% 40% at 100% 0%, rgba(52, 211, 153, 0.06), transparent);
+}
+
+::selection {
+	background: rgba(124, 92, 255, 0.35);
+}
