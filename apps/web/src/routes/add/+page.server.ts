@@ -24,6 +24,7 @@ export const actions: Actions = {
 		const startedAtRaw = String(form.get('startedAt') ?? '');
 		const notes = String(form.get('notes') ?? '').trim();
 		const platform = String(form.get('platform') ?? '').trim();
+		const platforms = form.getAll('platforms').map((v) => String(v));
 		const hoursRaw = String(form.get('hoursPlayed') ?? '');
 		const difficultyRaw = String(form.get('difficultyRating') ?? '3');
 		const rawgIdRaw = String(form.get('rawgId') ?? '');
@@ -62,6 +63,7 @@ export const actions: Actions = {
 				gameTitle,
 				rawgId: Number.isFinite(rawgId) ? rawgId : undefined,
 				gameImageUrl,
+				platforms,
 				platform: platform || undefined,
 				hoursPlayed,
 				startedAt,

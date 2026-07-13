@@ -2,6 +2,7 @@ import type { Completion, User } from '@tgif/db';
 import { ObjectId } from 'mongodb';
 import { trackServer } from '$lib/analytics/server';
 import { AnalyticsEvents } from '$lib/analytics/events';
+import { normalizePlatforms, platformsOf } from '$lib/config/platforms';
 import { getDb } from './db';
 import { resolveGameStoreData } from './games';
 import { deleteMediaFile, saveMedia } from './media';
@@ -14,7 +15,9 @@ export interface CreateCompletionInput {
 	gameTitle: string;
 	rawgId?: number;
 	gameImageUrl?: string;
+	/** @deprecated Prefer `platforms`. */
 	platform?: string;
+	platforms?: string[];
 	hoursPlayed?: number;
 	startedAt?: Date;
 	completedAt: Date;
@@ -22,6 +25,8 @@ export interface CreateCompletionInput {
 	notes?: string;
 	mediaFile?: File;
 }
+
+export { platformsOf };
 
 export async function createCompletion(
 	input: CreateCompletionInput
@@ -56,6 +61,11 @@ export async function createCompletion(
 		gameImageUrl: input.gameImageUrl
 	});
 
+	const platforms = normalizePlatforms([
+		...(input.platforms ?? []),
+		...(input.platform ? [input.platform] : [])
+	]);
+
 	const doc: Omit<Completion, '_id'> = {
 		userId: input.user._id,
 		clerkId: input.user.clerkId,
@@ -66,7 +76,9 @@ export async function createCompletion(
 		gameImageUrl: input.gameImageUrl,
 		storeUrl,
 		storeLinks,
-		platform: input.platform?.trim() || undefined,
+		platforms: platforms.length ? platforms : undefined,
+		// Keep legacy single field in sync for older readers.
+		platform: platforms[0],
 		hoursPlayed: input.hoursPlayed,
 		startedAt: input.startedAt,
 		completedAt: input.completedAt,
@@ -157,6 +169,7 @@ export async function getRecentCompletions(limit = 12): Promise<Completion[]> {
 }
 
 export function serializeCompletion(completion: Completion) {
+	const platforms = platformsOf(completion);
 	return {
 		id: completion._id.toString(),
 		username: completion.username,
@@ -166,7 +179,8 @@ export function serializeCompletion(completion: Completion) {
 		gameImageUrl: completion.gameImageUrl,
 		storeUrl: completion.storeUrl,
 		storeLinks: completion.storeLinks,
-		platform: completion.platform,
+		platform: platforms[0],
+		platforms,
 		hoursPlayed: completion.hoursPlayed,
 		startedAt: completion.startedAt?.toISOString(),
 		completedAt: completion.completedAt.toISOString(),

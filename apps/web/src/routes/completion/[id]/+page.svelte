@@ -103,6 +103,12 @@
 				· {formatDate(data.completion.completedAt)}
 			</p>
 
+			{#if data.completion.platforms?.length}
+				<p class="mt-3 text-sm text-muted">
+					Finished on {data.completion.platforms.join(', ')}
+				</p>
+			{/if}
+
 			{#if data.completion.notes}
 				<p class="mt-4 text-white/85">{data.completion.notes}</p>
 			{/if}

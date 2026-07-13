@@ -1,5 +1,6 @@
 <script lang="ts">
 	import GameSearch from '$lib/components/GameSearch.svelte';
+	import { GAME_PLATFORMS } from '$lib/config/platforms';
 	import { enhance } from '$app/forms';
 
 	let { form, data } = $props();
@@ -65,38 +66,34 @@
 			</div>
 		</div>
 
-		<div class="grid gap-4 sm:grid-cols-2">
-			<div>
-				<label for="platform" class="mb-2 block text-sm font-medium">Platform (optional)</label>
-				<select
-					id="platform"
-					name="platform"
-					class="w-full rounded-xl border border-border bg-surface px-4 py-3 outline-none focus:border-accent"
-				>
-					<option value="">Select platform</option>
-					<option value="PC">PC</option>
-					<option value="PlayStation 5">PlayStation 5</option>
-					<option value="PlayStation 4">PlayStation 4</option>
-					<option value="Xbox Series X|S">Xbox Series X|S</option>
-					<option value="Xbox One">Xbox One</option>
-					<option value="Nintendo Switch">Nintendo Switch</option>
-					<option value="Steam Deck">Steam Deck</option>
-					<option value="Mobile">Mobile</option>
-					<option value="Other">Other</option>
-				</select>
+		<div>
+			<p class="mb-1 text-sm font-medium">Platforms (optional)</p>
+			<p class="mb-3 text-xs text-muted">
+				Check every hardware platform where you finished this game (not the store — Steam / Epic / GOG don’t count).
+			</p>
+			<div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+				{#each GAME_PLATFORMS as platform}
+					<label
+						class="flex cursor-pointer items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2.5 text-sm hover:border-accent/40"
+					>
+						<input type="checkbox" name="platforms" value={platform} class="size-4 accent-accent" />
+						<span>{platform}</span>
+					</label>
+				{/each}
 			</div>
-			<div>
-				<label for="hoursPlayed" class="mb-2 block text-sm font-medium">Hours played (optional)</label>
-				<input
-					id="hoursPlayed"
-					name="hoursPlayed"
-					type="number"
-					min="0"
-					step="0.5"
-					placeholder="12"
-					class="w-full rounded-xl border border-border bg-surface px-4 py-3 outline-none focus:border-accent"
-				/>
-			</div>
+		</div>
+
+		<div>
+			<label for="hoursPlayed" class="mb-2 block text-sm font-medium">Hours played (optional)</label>
+			<input
+				id="hoursPlayed"
+				name="hoursPlayed"
+				type="number"
+				min="0"
+				step="0.5"
+				placeholder="12"
+				class="w-full rounded-xl border border-border bg-surface px-4 py-3 outline-none focus:border-accent"
+			/>
 		</div>
 
 		<div>

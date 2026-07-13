@@ -13,6 +13,7 @@
 			gameImageUrl?: string;
 			storeUrl?: string;
 			storeLinks?: StoreLink[];
+			platforms?: string[];
 			completedAt: string;
 			notes?: string;
 			mediaKey?: string;
@@ -68,6 +69,10 @@
 				<span class="hover:text-accent">{completion.displayName}</span>
 				· finished {formatDate(completion.completedAt)}
 			</p>
+
+			{#if completion.platforms?.length}
+				<p class="mt-2 text-xs text-muted">{completion.platforms.join(' · ')}</p>
+			{/if}
 
 			{#if completion.notes}
 				<p class="mt-3 line-clamp-2 text-sm text-white/80">{completion.notes}</p>

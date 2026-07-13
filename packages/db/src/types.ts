@@ -52,7 +52,10 @@ export interface Completion {
 	/** Denormalized from Game for public pages without an extra join. */
 	storeUrl?: string;
 	storeLinks?: StoreLink[];
+	/** @deprecated Prefer `platforms`. Kept for older completions. */
 	platform?: string;
+	/** Hardware platforms where this game was finished (Xbox, PS5, PC, … — not stores). */
+	platforms?: string[];
 	hoursPlayed?: number;
 	startedAt?: Date;
 	/** Alias of finished moment — kept as completedAt for compatibility */

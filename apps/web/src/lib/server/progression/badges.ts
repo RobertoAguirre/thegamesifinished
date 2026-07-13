@@ -1,5 +1,6 @@
 import type { Badge, BadgeRule, Completion, DifficultyTier, User, UserBadge } from '@tgif/db';
 import { ObjectId } from 'mongodb';
+import { platformsOf } from '$lib/config/platforms';
 import { getDb } from '../db';
 import { buildUserGameTier, enrichCompletionTier } from './difficulty';
 import { getRankTiers, rankForXp } from './ranks';
@@ -129,14 +130,14 @@ function evaluateRule(
 			return list.length >= rule.threshold;
 		}
 		case 'distinct': {
-			const values = new Set(
-				completions
-					.map((c) => {
-						if (rule.field === 'platform') return c.platform?.trim().toLowerCase();
-						return c.gameTitle.trim().toLowerCase();
-					})
-					.filter((v): v is string => Boolean(v))
-			);
+			const values = new Set<string>();
+			for (const c of completions) {
+				if (rule.field === 'platform') {
+					for (const p of platformsOf(c)) values.add(p.trim().toLowerCase());
+				} else {
+					values.add(c.gameTitle.trim().toLowerCase());
+				}
+			}
 			return values.size >= rule.threshold;
 		}
 		case 'streak': {
