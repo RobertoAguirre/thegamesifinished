@@ -1,12 +1,13 @@
 import { fail, isRedirect, redirect } from '@sveltejs/kit';
 import { createCompletion } from '$lib/server/completions';
+import { hasRawgApiKey } from '$lib/server/rawg';
 import { getUserByClerkId } from '$lib/server/users';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const { userId } = locals.auth();
 	if (!userId) redirect(307, '/sign-in');
-	return {};
+	return { rawgEnabled: hasRawgApiKey() };
 };
 
 export const actions: Actions = {

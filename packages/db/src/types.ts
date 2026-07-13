@@ -21,7 +21,7 @@ export interface Completion {
 	gameImageUrl?: string;
 	completedAt: Date;
 	notes?: string;
-	mediaId?: ObjectId;
+	mediaKey?: string;
 	mediaType?: 'image' | 'video';
 	createdAt: Date;
 }

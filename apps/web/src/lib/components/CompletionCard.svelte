@@ -10,7 +10,7 @@
 			gameImageUrl?: string;
 			completedAt: string;
 			notes?: string;
-			mediaId?: string;
+			mediaKey?: string;
 			mediaType?: 'image' | 'video';
 		};
 	}
@@ -22,18 +22,18 @@
 	class="group overflow-hidden rounded-2xl border border-border bg-surface transition-all hover:border-accent/40 hover:bg-surface-hover"
 >
 	<a href="/completion/{completion.id}" class="block">
-		{#if completion.mediaId}
+		{#if completion.mediaKey}
 			<div class="aspect-video overflow-hidden bg-black/40">
 				{#if completion.mediaType === 'video'}
 					<video
-						src="/api/media/{completion.mediaId}"
+						src="/api/media/{completion.mediaKey}"
 						class="h-full w-full object-cover"
 						muted
 						preload="metadata"
 					></video>
 				{:else}
 					<img
-						src="/api/media/{completion.mediaId}"
+						src="/api/media/{completion.mediaKey}"
 						alt="Proof for {completion.gameTitle}"
 						class="h-full w-full object-cover transition-transform group-hover:scale-[1.02]"
 					/>

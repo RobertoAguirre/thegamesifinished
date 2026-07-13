@@ -3,12 +3,12 @@ import { MongoClient, type Db } from 'mongodb';
 let client: MongoClient | null = null;
 let db: Db | null = null;
 
-export async function connectDb(uri: string): Promise<Db> {
+export async function connectDb(uri: string, dbName = 'thegamesifinished'): Promise<Db> {
 	if (db) return db;
 
 	client = new MongoClient(uri);
 	await client.connect();
-	db = client.db();
+	db = client.db(dbName);
 	return db;
 }
 

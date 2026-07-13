@@ -10,6 +10,7 @@
 		value?: string;
 		rawgId?: number | null;
 		gameImageUrl?: string | null;
+		rawgEnabled?: boolean;
 		onselect?: (game: { title: string; rawgId?: number; gameImageUrl?: string }) => void;
 	}
 
@@ -18,6 +19,7 @@
 		value = $bindable(''),
 		rawgId = $bindable(null),
 		gameImageUrl = $bindable(null),
+		rawgEnabled = true,
 		onselect
 	}: Props = $props();
 
@@ -26,22 +28,34 @@
 	let loading = $state(false);
 	let manualMode = $state(false);
 	let debounceTimer: ReturnType<typeof setTimeout>;
+	let abortController: AbortController | null = null;
+
+	$effect(() => {
+		if (!rawgEnabled) manualMode = true;
+	});
 
 	async function searchGames(q: string) {
-		if (q.length < 2) {
+		if (!rawgEnabled || q.length < 2) {
 			results = [];
 			return;
 		}
 
+		abortController?.abort();
+		abortController = new AbortController();
+		const { signal } = abortController;
+
 		loading = true;
 		try {
-			const response = await fetch(`/api/games/search?q=${encodeURIComponent(q)}`);
-			const data = (await response.json()) as { results: GameResult[] };
+			const response = await fetch(`/api/games/search?q=${encodeURIComponent(q)}`, { signal });
+			const data = (await response.json()) as { results: GameResult[]; enabled?: boolean };
+			if (signal.aborted) return;
 			results = data.results ?? [];
-		} catch {
+			if (data.enabled === false) manualMode = true;
+		} catch (error) {
+			if (error instanceof DOMException && error.name === 'AbortError') return;
 			results = [];
 		} finally {
-			loading = false;
+			if (!signal.aborted) loading = false;
 		}
 	}
 
@@ -51,8 +65,11 @@
 		value = target.value;
 		rawgId = null;
 		gameImageUrl = null;
+
+		if (!rawgEnabled) return;
+
 		clearTimeout(debounceTimer);
-		debounceTimer = setTimeout(() => searchGames(query), 300);
+		debounceTimer = setTimeout(() => searchGames(query), 450);
 	}
 
 	function selectGame(game: GameResult) {
@@ -73,13 +90,19 @@
 <div class="space-y-2">
 	<label for="game-search" class="block text-sm font-medium">Game title</label>
 
+	{#if !rawgEnabled}
+		<p class="text-xs text-muted">
+			Game search is off — enter the title manually. Add <code class="text-accent">RAWG_API_KEY</code> to enable autocomplete.
+		</p>
+	{/if}
+
 	<div class="relative">
 		<input
 			id="game-search"
 			{name}
 			type="text"
 			required
-			placeholder="Search for a game..."
+			placeholder={rawgEnabled ? 'Search for a game...' : 'Enter game title...'}
 			value={query || value}
 			oninput={onInput}
 			class="w-full rounded-xl border border-border bg-surface px-4 py-3 outline-none focus:border-accent"
@@ -111,7 +134,7 @@
 		{/if}
 	</div>
 
-	{#if !manualMode}
+	{#if rawgEnabled && !manualMode}
 		<button type="button" onclick={useManual} class="text-xs text-muted hover:text-accent">
 			Can't find your game? Enter it manually
 		</button>

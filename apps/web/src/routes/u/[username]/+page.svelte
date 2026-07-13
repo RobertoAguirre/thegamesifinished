@@ -10,6 +10,10 @@
 		name="description"
 		content="{data.user.displayName} has finished {data.totalGames} games on The Games I Finished."
 	/>
+	<meta property="og:url" content="{data.siteOrigin}/u/{data.user.username}" />
+	<meta property="og:title" content="{data.user.displayName} — The Games I Finished" />
+	<meta property="og:description" content="{data.user.displayName} has finished {data.totalGames} games." />
+	<meta name="twitter:card" content="summary" />
 </svelte:head>
 
 <section class="mb-10 flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">

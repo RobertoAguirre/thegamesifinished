@@ -2,7 +2,7 @@
 	import GameSearch from '$lib/components/GameSearch.svelte';
 	import { enhance } from '$app/forms';
 
-	let { form } = $props();
+	let { form, data } = $props();
 
 	let gameTitle = $state('');
 	let rawgId = $state<number | null>(null);
@@ -34,7 +34,7 @@
 		}}
 		class="space-y-6"
 	>
-		<GameSearch bind:value={gameTitle} bind:rawgId bind:gameImageUrl />
+		<GameSearch bind:value={gameTitle} bind:rawgId bind:gameImageUrl rawgEnabled={data.rawgEnabled} />
 
 		<input type="hidden" name="rawgId" value={rawgId ?? ''} />
 		<input type="hidden" name="gameImageUrl" value={gameImageUrl ?? ''} />

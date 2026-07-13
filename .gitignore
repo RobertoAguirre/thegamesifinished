@@ -6,4 +6,10 @@ dist
 .env.*
 !.env.example
 .DS_Store
-*.log
+# Uploads (never commit media)
+uploads
+apps/web/uploads
+
+# Nested lockfile — use root package-lock.json for workspaces
+apps/web/package-lock.json
+

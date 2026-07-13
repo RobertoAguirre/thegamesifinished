@@ -3,25 +3,174 @@ import { env } from '$env/dynamic/private';
 
 const RAWG_BASE = 'https://api.rawg.io/api';
 
-export async function searchGames(query: string): Promise<RawgGame[]> {
-	if (!query.trim()) return [];
+/** Free plan: 20,000 requests / period — cache hard, fetch sparingly. */
+const CACHE_TTL_MS = 15 * 60 * 1000;
+const MAX_CACHE_ENTRIES = 200;
+const MAX_CONCURRENT = 2;
+const FETCH_TIMEOUT_MS = 8_000;
+const MIN_QUERY_LENGTH = 2;
+const PAGE_SIZE = 8;
 
-	const params = new URLSearchParams({
-		search: query.trim(),
-		page_size: '8'
-	});
+type CacheEntry = {
+	results: RawgGame[];
+	expiresAt: number;
+};
 
-	if (env.RAWG_API_KEY) {
-		params.set('key', env.RAWG_API_KEY);
+const cache = new Map<string, CacheEntry>();
+const inFlight = new Map<string, Promise<RawgGame[]>>();
+
+let activeRequests = 0;
+const waitQueue: Array<() => void> = [];
+
+let requestCount = 0;
+let cacheHits = 0;
+let cacheMisses = 0;
+
+export function hasRawgApiKey(): boolean {
+	return Boolean(env.RAWG_API_KEY?.trim());
+}
+
+function normalizeQuery(query: string): string {
+	return query.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function getCached(key: string): RawgGame[] | null {
+	const entry = cache.get(key);
+	if (!entry) return null;
+	if (Date.now() > entry.expiresAt) {
+		cache.delete(key);
+		return null;
+	}
+	return entry.results;
+}
+
+function setCached(key: string, results: RawgGame[]): void {
+	if (cache.size >= MAX_CACHE_ENTRIES) {
+		const oldest = cache.keys().next().value;
+		if (oldest) cache.delete(oldest);
+	}
+	cache.set(key, { results, expiresAt: Date.now() + CACHE_TTL_MS });
+}
+
+async function withConcurrency<T>(task: () => Promise<T>): Promise<T> {
+	if (activeRequests >= MAX_CONCURRENT) {
+		await new Promise<void>((resolve) => waitQueue.push(resolve));
 	}
 
-	const response = await fetch(`${RAWG_BASE}/games?${params}`);
+	activeRequests += 1;
+	try {
+		return await task();
+	} finally {
+		activeRequests -= 1;
+		const next = waitQueue.shift();
+		if (next) next();
+	}
+}
 
-	if (!response.ok) {
-		console.error('RAWG search failed:', response.status);
+async function fetchRawgGames(params: URLSearchParams): Promise<Response> {
+	const controller = new AbortController();
+	const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+	try {
+		return await fetch(`${RAWG_BASE}/games?${params}`, {
+			signal: controller.signal,
+			headers: { Accept: 'application/json' }
+		});
+	} finally {
+		clearTimeout(timer);
+	}
+}
+
+async function requestSearch(normalized: string): Promise<RawgGame[]> {
+	const params = new URLSearchParams({
+		search: normalized,
+		page_size: String(PAGE_SIZE),
+		key: env.RAWG_API_KEY!.trim()
+	});
+
+	return withConcurrency(async () => {
+		requestCount += 1;
+		const response = await fetchRawgGames(params);
+
+		if (response.status === 429) {
+			console.warn('RAWG rate limited (429)');
+			return [];
+		}
+
+		if (!response.ok) {
+			console.error('RAWG search failed:', response.status);
+			return [];
+		}
+
+		const data = (await response.json()) as { results?: RawgGame[] };
+		const results = (data.results ?? []).map((game) => ({
+			id: game.id,
+			name: game.name,
+			background_image: game.background_image,
+			released: game.released
+		}));
+
+		setCached(normalized, results);
+		return results;
+	});
+}
+
+/**
+ * Search games via RAWG.
+ * Dedupes in-flight queries and caches results for 15 minutes.
+ */
+export async function searchGames(query: string): Promise<RawgGame[]> {
+	const normalized = normalizeQuery(query);
+	if (normalized.length < MIN_QUERY_LENGTH) return [];
+
+	if (!hasRawgApiKey()) {
+		console.warn('RAWG_API_KEY is not configured — game search disabled');
 		return [];
 	}
 
-	const data = (await response.json()) as { results?: RawgGame[] };
-	return data.results ?? [];
+	const cached = getCached(normalized);
+	if (cached) {
+		cacheHits += 1;
+		return cached;
+	}
+
+	const pending = inFlight.get(normalized);
+	if (pending) {
+		cacheHits += 1;
+		return pending;
+	}
+
+	cacheMisses += 1;
+	const promise = requestSearch(normalized).finally(() => {
+		inFlight.delete(normalized);
+	});
+	inFlight.set(normalized, promise);
+	return promise;
+}
+
+export function getRawgStats() {
+	return {
+		enabled: hasRawgApiKey(),
+		cacheSize: cache.size,
+		cacheHits,
+		cacheMisses,
+		outboundRequests: requestCount,
+		activeRequests,
+		queued: waitQueue.length,
+		cacheTtlMinutes: CACHE_TTL_MS / 60_000,
+		maxConcurrent: MAX_CONCURRENT
+	};
+}
+
+/** Health: key presence only — never burns RAWG quota on probes. */
+export async function verifyRawgConnection(): Promise<{ ok: boolean; message: string }> {
+	if (!hasRawgApiKey()) {
+		return { ok: false, message: 'RAWG_API_KEY is not configured' };
+	}
+
+	const stats = getRawgStats();
+	return {
+		ok: true,
+		message: `configured · cache ${stats.cacheSize} · out ${stats.outboundRequests}`
+	};
 }

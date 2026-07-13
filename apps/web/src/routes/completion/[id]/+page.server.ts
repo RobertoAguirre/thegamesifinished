@@ -1,5 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { getCompletionById, serializeCompletion } from '$lib/server/completions';
+import { getSiteOrigin } from '$lib/server/origin';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, url }) => {
@@ -8,6 +9,6 @@ export const load: PageServerLoad = async ({ params, url }) => {
 
 	return {
 		completion: serializeCompletion(completion),
-		origin: url.origin
+		siteOrigin: getSiteOrigin(url)
 	};
 };

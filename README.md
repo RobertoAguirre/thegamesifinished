@@ -1,64 +1,114 @@
 # The Games I Finished
 
-A minimalist hobby site where gamers log completed games, upload proof (screenshots or short clips), and share their wins on social media.
+Minimalist hobby site where gamers log completed games, upload proof, and share wins.
 
 ## Stack
 
-- **SvelteKit 2** + **Svelte 5** — frontend & API
-- **Tailwind CSS 4** — styling
-- **Clerk** (`svelte-clerk`) — authentication
-- **MongoDB Atlas** — users, completions, media (GridFS)
-- **RAWG API** — game title search (manual entry fallback)
-- **Render** — deployment via `@sveltejs/adapter-node`
+- **SvelteKit 2** + **Svelte 5** + **Tailwind CSS 4**
+- **Clerk** (`svelte-clerk`) — auth
+- **MongoDB Atlas** — users & completions
+- **Disk storage** — images/videos (`UPLOAD_DIR`)
+- **RAWG API** — game title search (cached, rate-safe)
+- **Render** — `@sveltejs/adapter-node` + Persistent Disk
 
-## Monorepo structure
+## Monorepo
 
 ```
-apps/web/          → SvelteKit application
-packages/db/       → Shared MongoDB types & connection
+apps/web/       → SvelteKit app (adapter-node → apps/web/build)
+packages/db/    → MongoDB client & types
 ```
 
 ## Local development
 
-1. Copy environment variables:
-
 ```bash
 cp .env.example apps/web/.env
-```
-
-2. Fill in your keys:
-   - [Clerk](https://dashboard.clerk.com) — create an application
-   - [MongoDB Atlas](https://www.mongodb.com/atlas) — free cluster
-   - [RAWG](https://rawg.io/apidocs) — optional API key for game search
-
-3. Install and run:
-
-```bash
+# Edit apps/web/.env with your keys
 npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173).
+SvelteKit reads **`apps/web/.env`**, not the root `.env`.
 
-## Deploy on Render
+### Required env vars (`apps/web/.env`)
+
+| Variable | Purpose |
+|---|---|
+| `PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key |
+| `CLERK_SECRET_KEY` | Clerk secret key |
+| `MONGODB_URI` | MongoDB Atlas connection string |
+| `RAWG_API_KEY` | Game search (https://rawg.io/apidocs) |
+| `UPLOAD_DIR` | Local: `./uploads` · Render: `/var/data/uploads` |
+| `ORIGIN` | Local: `http://localhost:5173` · Prod: `https://www.gamesifinished.com` |
+| `BODY_SIZE_LIMIT` | `26M` (for video uploads) |
+| `HOST` | Render: `0.0.0.0` |
+| `NODE_VERSION` | `22` |
+
+### Clerk dashboard
+
+- Paths: `/sign-in`, `/sign-up`, redirect `/dashboard`
+- Enable **Username**
+- Domains: `http://localhost:5173` + production URL
+
+### Health checks
+
+```bash
+curl http://localhost:5173/api/health
+curl http://localhost:5173/api/health/rawg
+```
+
+RAWG health only checks that the key exists — it does **not** call RAWG (so Render probes don't burn quota).
+
+## RAWG usage (Free: 20,000 requests / period)
+
+Configured for low quota impact:
+
+- Backend cache **15 minutes** per search query
+- Max **2 concurrent** outbound RAWG calls
+- Dedupes identical in-flight searches
+- Frontend debounce **450ms** + abort stale requests
+- Min query length: **2** characters
+- Cover images come from RAWG CDN URLs (not counted as API calls)
+- Attribution link to [RAWG.io](https://rawg.io/) in the footer (required by free plan)
+
+## Deploy on Render (manual Web Service)
 
 1. Push this repo to GitHub
-2. Create a **Web Service** on [Render](https://render.com)
-3. Use the included `render.yaml` or configure manually:
-   - **Build command:** `npm install && npm run build`
-   - **Start command:** `node apps/web/build/index.js`
-4. Add environment variables from `.env.example`
-5. In Clerk dashboard, add your Render URL to allowed origins
+2. [Render](https://render.com) → **New → Web Service** → connect the repo
+3. Configure:
 
-## Features
+| Setting | Value |
+|---|---|
+| Root Directory | *(empty — repo root)* |
+| Runtime | Node |
+| Build Command | `npm ci && npm run build` |
+| Start Command | `npm run start` |
+| Health Check Path | `/api/health` |
+| Instance | **Starter** (Persistent Disk needs paid plan) |
+| Disk | name `uploads`, mount `/var/data`, size `1` GB |
 
-- Sign up / sign in with Clerk
-- Search games via RAWG or enter title manually
-- Upload screenshot or short video as proof
-- Public profile with total games finished
-- Share completions on Facebook, X, Instagram (caption), TikTok (caption)
-- Open Graph meta tags for rich link previews
+4. Environment variables:
+
+```
+NODE_VERSION=22
+NODE_ENV=production
+HOST=0.0.0.0
+BODY_SIZE_LIMIT=26M
+UPLOAD_DIR=/var/data/uploads
+PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/dashboard
+PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/dashboard
+PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
+CLERK_SECRET_KEY=sk_...
+MONGODB_URI=mongodb+srv://...
+RAWG_API_KEY=...
+ORIGIN=https://www.gamesifinished.com
+```
+
+`npm run start` → `node apps/web/build/index.js`
+
+5. After deploy: add your Render / custom domain in **Clerk → Domains**.
 
 ## License
 
-MIT — hobby project, use freely.
+MIT — hobby project.

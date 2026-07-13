@@ -2,6 +2,9 @@
 	"name": "thegamesifinished",
 	"private": true,
 	"version": "0.1.0",
+	"engines": {
+		"node": ">=22"
+	},
 	"workspaces": [
 		"apps/*",
 		"packages/*"
@@ -9,7 +12,16 @@
 	"scripts": {
 		"dev": "npm run dev --workspace=web",
 		"build": "npm run build --workspace=web",
+		"start": "node apps/web/build/index.js",
 		"preview": "npm run preview --workspace=web",
-		"check": "npm run check --workspace=web"
+		"check": "npm run check --workspace=web",
+		"clerk:login": "clerk auth login",
+		"clerk:link": "clerk link --app app_3GSbQTMdAKb0hRRdlQLh7Hzy2sP",
+		"clerk:env": "clerk env pull --app app_3GSbQTMdAKb0hRRdlQLh7Hzy2sP --file apps/web/.env && node scripts/sync-clerk-env.mjs",
+		"clerk:doctor": "clerk doctor",
+		"clerk:setup": "npm run clerk:link && npm run clerk:env && npm run clerk:doctor"
+	},
+	"devDependencies": {
+		"clerk": "^2.1.0"
 	}
 }

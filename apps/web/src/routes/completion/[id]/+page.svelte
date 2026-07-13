@@ -6,8 +6,8 @@
 
 	const shareDescription = $derived(shareText(data.completion.gameTitle, data.completion.displayName));
 	const ogImage = $derived(
-		data.completion.mediaId
-			? `${data.origin}/api/media/${data.completion.mediaId}`
+		data.completion.mediaKey
+			? `${data.siteOrigin}/api/media/${data.completion.mediaKey}`
 			: data.completion.gameImageUrl
 	);
 </script>
@@ -18,7 +18,7 @@
 	<meta property="og:title" content="{data.completion.displayName} finished {data.completion.gameTitle}" />
 	<meta property="og:description" content={shareDescription} />
 	<meta property="og:type" content="website" />
-	<meta property="og:url" content="{data.origin}/completion/{data.completion.id}" />
+	<meta property="og:url" content="{data.siteOrigin}/completion/{data.completion.id}" />
 	{#if ogImage}
 		<meta property="og:image" content={ogImage} />
 	{/if}
@@ -27,18 +27,18 @@
 
 <article class="mx-auto max-w-2xl">
 	<div class="mb-6 overflow-hidden rounded-2xl border border-border bg-surface">
-		{#if data.completion.mediaId}
+		{#if data.completion.mediaKey}
 			<div class="bg-black">
 				{#if data.completion.mediaType === 'video'}
 					<!-- svelte-ignore a11y_media_has_caption -->
 					<video
-						src="/api/media/{data.completion.mediaId}"
+						src="/api/media/{data.completion.mediaKey}"
 						controls
 						class="max-h-[480px] w-full object-contain"
 					></video>
 				{:else}
 					<img
-						src="/api/media/{data.completion.mediaId}"
+						src="/api/media/{data.completion.mediaKey}"
 						alt="Proof for {data.completion.gameTitle}"
 						class="max-h-[480px] w-full object-contain"
 					/>
@@ -74,7 +74,7 @@
 			gameTitle={data.completion.gameTitle}
 			displayName={data.completion.displayName}
 			completionPath="/completion/{data.completion.id}"
-			origin={data.origin}
+			origin={data.siteOrigin}
 		/>
 	</section>
 </article>

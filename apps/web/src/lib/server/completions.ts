@@ -1,58 +1,7 @@
 import type { Completion, User } from '@tgif/db';
-import { ObjectId, GridFSBucket } from 'mongodb';
+import { ObjectId } from 'mongodb';
 import { getDb } from './db';
-
-const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
-
-export async function uploadMedia(
-	file: File
-): Promise<{ mediaId: ObjectId; mediaType: 'image' | 'video' }> {
-	const isVideo = file.type.startsWith('video/');
-	const isImage = file.type.startsWith('image/');
-
-	if (!isVideo && !isImage) {
-		throw new Error('Only images and videos are allowed');
-	}
-
-	const maxSize = isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
-	if (file.size > maxSize) {
-		throw new Error(`File too large. Max ${isVideo ? '25MB' : '10MB'}.`);
-	}
-
-	const db = await getDb();
-	const bucket = new GridFSBucket(db, { bucketName: 'media' });
-	const buffer = Buffer.from(await file.arrayBuffer());
-
-	return new Promise((resolve, reject) => {
-		const uploadStream = bucket.openUploadStream(file.name, {
-			metadata: { contentType: file.type, originalName: file.name, size: file.size }
-		});
-
-		uploadStream.on('error', reject);
-		uploadStream.on('finish', () => {
-			resolve({
-				mediaId: uploadStream.id as ObjectId,
-				mediaType: isVideo ? 'video' : 'image'
-			});
-		});
-
-		uploadStream.end(buffer);
-	});
-}
-
-export async function getMediaStream(id: string) {
-	const db = await getDb();
-	const bucket = new GridFSBucket(db, { bucketName: 'media' });
-	return bucket.openDownloadStream(new ObjectId(id));
-}
-
-export async function getMediaMetadata(id: string) {
-	const db = await getDb();
-	const bucket = new GridFSBucket(db, { bucketName: 'media' });
-	const files = await bucket.find({ _id: new ObjectId(id) }).toArray();
-	return files[0] ?? null;
-}
+import { saveMedia } from './media';
 
 export interface CreateCompletionInput {
 	user: User;
@@ -68,12 +17,12 @@ export async function createCompletion(input: CreateCompletionInput): Promise<Co
 	const db = await getDb();
 	const completions = db.collection<Omit<Completion, '_id'>>('completions');
 
-	let mediaId: ObjectId | undefined;
+	let mediaKey: string | undefined;
 	let mediaType: 'image' | 'video' | undefined;
 
 	if (input.mediaFile && input.mediaFile.size > 0) {
-		const uploaded = await uploadMedia(input.mediaFile);
-		mediaId = uploaded.mediaId;
+		const uploaded = await saveMedia(input.mediaFile);
+		mediaKey = uploaded.mediaKey;
 		mediaType = uploaded.mediaType;
 	}
 
@@ -87,7 +36,7 @@ export async function createCompletion(input: CreateCompletionInput): Promise<Co
 		gameImageUrl: input.gameImageUrl,
 		completedAt: input.completedAt,
 		notes: input.notes?.trim() || undefined,
-		mediaId,
+		mediaKey,
 		mediaType,
 		createdAt: new Date()
 	};
@@ -132,7 +81,7 @@ export function serializeCompletion(completion: Completion) {
 		gameImageUrl: completion.gameImageUrl,
 		completedAt: completion.completedAt.toISOString(),
 		notes: completion.notes,
-		mediaId: completion.mediaId?.toString(),
+		mediaKey: completion.mediaKey ?? (completion as { mediaId?: { toString(): string } }).mediaId?.toString(),
 		mediaType: completion.mediaType,
 		createdAt: completion.createdAt.toISOString()
 	};

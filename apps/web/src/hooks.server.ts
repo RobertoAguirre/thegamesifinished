@@ -3,7 +3,10 @@ import { withClerkHandler } from 'svelte-clerk/server';
 import type { Handle } from '@sveltejs/kit';
 import { syncUserFromClerk } from '$lib/server/users';
 
-const clerkHandle = withClerkHandler();
+const clerkHandle = withClerkHandler({
+	signInUrl: '/sign-in',
+	signUpUrl: '/sign-up'
+});
 
 const syncUserHandle: Handle = async ({ event, resolve }) => {
 	const auth = event.locals.auth();
