@@ -25,7 +25,10 @@
 		"vite": "^8.0.16"
 	},
 	"dependencies": {
+		"@resvg/resvg-js": "^2.6.2",
 		"@tgif/db": "*",
+		"posthog-js": "^1.399.4",
+		"posthog-node": "^5.41.0",
 		"svelte-clerk": "^1.1.10",
 		"zod": "^4.4.3"
 	},

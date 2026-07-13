@@ -7,7 +7,7 @@ export function formatDate(date: string | Date): string {
 }
 
 export function shareText(gameTitle: string, displayName: string): string {
-	return `I just finished ${gameTitle}! 🎮 — ${displayName} on The Games I Finished`;
+	return `${displayName} just finished ${gameTitle} — see the proof on The Games I Finished`;
 }
 
 export function absoluteUrl(path: string, origin: string): string {

@@ -1,19 +1,31 @@
 import type { Completion, User } from '@tgif/db';
 import { ObjectId } from 'mongodb';
+import { trackServer } from '$lib/analytics/server';
+import { AnalyticsEvents } from '$lib/analytics/events';
 import { getDb } from './db';
+import { resolveGameStoreData } from './games';
 import { saveMedia } from './media';
+import { generateOgCard } from './og';
+import { getCommunityDifficultyTier, xpForTier } from './progression/difficulty';
+import { evaluateBadgesForUser, type ProgressResult } from './progression/badges';
 
 export interface CreateCompletionInput {
 	user: User;
 	gameTitle: string;
 	rawgId?: number;
 	gameImageUrl?: string;
+	platform?: string;
+	hoursPlayed?: number;
+	startedAt?: Date;
 	completedAt: Date;
+	difficultyRating?: number;
 	notes?: string;
 	mediaFile?: File;
 }
 
-export async function createCompletion(input: CreateCompletionInput): Promise<Completion> {
+export async function createCompletion(
+	input: CreateCompletionInput
+): Promise<{ completion: Completion; progress: ProgressResult }> {
 	const db = await getDb();
 	const completions = db.collection<Omit<Completion, '_id'>>('completions');
 
@@ -26,23 +38,81 @@ export async function createCompletion(input: CreateCompletionInput): Promise<Co
 		mediaType = uploaded.mediaType;
 	}
 
+	const gameTitle = input.gameTitle.trim();
+	const difficultyRating =
+		input.difficultyRating != null && input.difficultyRating >= 1 && input.difficultyRating <= 5
+			? Math.round(input.difficultyRating)
+			: 3;
+
+	const ogImageKey =
+		(await generateOgCard({
+			displayName: input.user.displayName,
+			gameTitle
+		})) ?? undefined;
+
+	const { storeUrl, storeLinks } = await resolveGameStoreData({
+		gameTitle,
+		rawgId: input.rawgId,
+		gameImageUrl: input.gameImageUrl
+	});
+
 	const doc: Omit<Completion, '_id'> = {
 		userId: input.user._id,
 		clerkId: input.user.clerkId,
 		username: input.user.username,
 		displayName: input.user.displayName,
-		gameTitle: input.gameTitle.trim(),
+		gameTitle,
 		rawgId: input.rawgId,
 		gameImageUrl: input.gameImageUrl,
+		storeUrl,
+		storeLinks,
+		platform: input.platform?.trim() || undefined,
+		hoursPlayed: input.hoursPlayed,
+		startedAt: input.startedAt,
 		completedAt: input.completedAt,
+		difficultyRating,
 		notes: input.notes?.trim() || undefined,
 		mediaKey,
 		mediaType,
+		ogImageKey,
 		createdAt: new Date()
 	};
 
 	const result = await completions.insertOne(doc as Completion);
-	return { _id: result.insertedId, ...doc };
+	const completion = { _id: result.insertedId, ...doc };
+
+	const priorCount = await completions.countDocuments({ userId: input.user._id });
+	if (priorCount === 2) {
+		void trackServer(input.user.clerkId, AnalyticsEvents.secondCompletion, {
+			completion_id: completion._id.toString(),
+			game_title: gameTitle,
+			username: input.user.username
+		});
+	}
+
+	const { tier } = await getCommunityDifficultyTier({
+		rawgId: input.rawgId,
+		gameTitle
+	});
+	const xpGained = xpForTier(tier);
+	const progress = await evaluateBadgesForUser(input.user, { xpGained });
+
+	for (const badge of progress.unlockedBadges) {
+		void trackServer(input.user.clerkId, AnalyticsEvents.badgeUnlocked, {
+			badge_slug: badge.slug,
+			badge_name: badge.name,
+			completion_id: completion._id.toString()
+		});
+	}
+	if (progress.rankUp) {
+		void trackServer(input.user.clerkId, AnalyticsEvents.rankUnlocked, {
+			rank: progress.newRank,
+			completion_id: completion._id.toString(),
+			xp_gained: progress.xpGained
+		});
+	}
+
+	return { completion, progress };
 }
 
 export async function getCompletionById(id: string): Promise<Completion | null> {
@@ -79,10 +149,19 @@ export function serializeCompletion(completion: Completion) {
 		gameTitle: completion.gameTitle,
 		rawgId: completion.rawgId,
 		gameImageUrl: completion.gameImageUrl,
+		storeUrl: completion.storeUrl,
+		storeLinks: completion.storeLinks,
+		platform: completion.platform,
+		hoursPlayed: completion.hoursPlayed,
+		startedAt: completion.startedAt?.toISOString(),
 		completedAt: completion.completedAt.toISOString(),
+		difficultyRating: completion.difficultyRating,
 		notes: completion.notes,
-		mediaKey: completion.mediaKey ?? (completion as { mediaId?: { toString(): string } }).mediaId?.toString(),
+		mediaKey:
+			completion.mediaKey ??
+			(completion as { mediaId?: { toString(): string } }).mediaId?.toString(),
 		mediaType: completion.mediaType,
+		ogImageKey: completion.ogImageKey,
 		createdAt: completion.createdAt.toISOString()
 	};
 }

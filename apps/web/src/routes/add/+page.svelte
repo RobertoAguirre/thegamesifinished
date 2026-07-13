@@ -8,6 +8,7 @@
 	let rawgId = $state<number | null>(null);
 	let gameImageUrl = $state<string | null>(null);
 	let submitting = $state(false);
+	let difficulty = $state('3');
 
 	const today = new Date().toISOString().split('T')[0];
 </script>
@@ -39,17 +40,72 @@
 		<input type="hidden" name="rawgId" value={rawgId ?? ''} />
 		<input type="hidden" name="gameImageUrl" value={gameImageUrl ?? ''} />
 
+		<div class="grid gap-4 sm:grid-cols-2">
+			<div>
+				<label for="completedAt" class="mb-2 block text-sm font-medium">Date finished</label>
+				<input
+					id="completedAt"
+					name="completedAt"
+					type="date"
+					max={today}
+					value={today}
+					required
+					class="w-full rounded-xl border border-border bg-surface px-4 py-3 outline-none focus:border-accent"
+				/>
+			</div>
+			<div>
+				<label for="startedAt" class="mb-2 block text-sm font-medium">Date started (optional)</label>
+				<input
+					id="startedAt"
+					name="startedAt"
+					type="date"
+					max={today}
+					class="w-full rounded-xl border border-border bg-surface px-4 py-3 outline-none focus:border-accent"
+				/>
+			</div>
+		</div>
+
+		<div class="grid gap-4 sm:grid-cols-2">
+			<div>
+				<label for="platform" class="mb-2 block text-sm font-medium">Platform (optional)</label>
+				<input
+					id="platform"
+					name="platform"
+					type="text"
+					placeholder="PC, Switch, Steam Deck..."
+					class="w-full rounded-xl border border-border bg-surface px-4 py-3 outline-none focus:border-accent"
+				/>
+			</div>
+			<div>
+				<label for="hoursPlayed" class="mb-2 block text-sm font-medium">Hours played (optional)</label>
+				<input
+					id="hoursPlayed"
+					name="hoursPlayed"
+					type="number"
+					min="0"
+					step="0.5"
+					placeholder="12"
+					class="w-full rounded-xl border border-border bg-surface px-4 py-3 outline-none focus:border-accent"
+				/>
+			</div>
+		</div>
+
 		<div>
-			<label for="completedAt" class="mb-2 block text-sm font-medium">Date finished</label>
-			<input
-				id="completedAt"
-				name="completedAt"
-				type="date"
-				max={today}
-				value={today}
-				required
+			<label for="difficultyRating" class="mb-2 block text-sm font-medium"
+				>How hard was it? (1 easy → 5 extreme)</label
+			>
+			<select
+				id="difficultyRating"
+				name="difficultyRating"
+				bind:value={difficulty}
 				class="w-full rounded-xl border border-border bg-surface px-4 py-3 outline-none focus:border-accent"
-			/>
+			>
+				<option value="1">1 — Easy</option>
+				<option value="2">2 — Mild</option>
+				<option value="3">3 — Medium</option>
+				<option value="4">4 — Hard</option>
+				<option value="5">5 — Extreme</option>
+			</select>
 		</div>
 
 		<div>

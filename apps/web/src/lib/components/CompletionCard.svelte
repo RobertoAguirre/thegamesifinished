@@ -1,5 +1,7 @@
 <script lang="ts">
+	import AffiliateButton from '$lib/components/AffiliateButton.svelte';
 	import { formatDate } from '$lib/utils';
+	import type { StoreLink } from '@tgif/db';
 
 	interface Props {
 		completion: {
@@ -8,6 +10,8 @@
 			displayName: string;
 			gameTitle: string;
 			gameImageUrl?: string;
+			storeUrl?: string;
+			storeLinks?: StoreLink[];
 			completedAt: string;
 			notes?: string;
 			mediaKey?: string;
@@ -68,9 +72,15 @@
 		</div>
 	</a>
 
-	<p class="px-5 pb-5 text-xs text-muted">
+	<div class="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 pb-5 text-xs text-muted">
 		<a href="/u/{completion.username}" class="hover:text-accent transition-colors">
 			View @{completion.username}'s profile
 		</a>
-	</p>
+		<AffiliateButton
+			gameTitle={completion.gameTitle}
+			completionId={completion.id}
+			storeLinks={completion.storeLinks}
+			storeUrl={completion.storeUrl}
+		/>
+	</div>
 </article>

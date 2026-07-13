@@ -14,6 +14,7 @@
 		<div>
 			<h1 class="text-2xl font-bold">{data.user.displayName}</h1>
 			<p class="text-muted">@{data.user.username}</p>
+			<p class="mt-1 text-sm text-accent">{data.rank.name} · {data.user.totalXp} XP</p>
 		</div>
 	</div>
 
@@ -30,6 +31,22 @@
 		</a>
 	</div>
 </section>
+
+{#if data.badges.length > 0}
+	<section class="mb-10">
+		<h2 class="mb-4 text-xl font-semibold">Patches</h2>
+		<div class="flex flex-wrap gap-3">
+			{#each data.badges as badge}
+				{#if badge}
+					<div class="rounded-xl border border-border bg-surface px-4 py-3">
+						<p class="font-medium">{badge.iconEmoji} {badge.name}</p>
+						<p class="text-xs text-muted">{badge.description}</p>
+					</div>
+				{/if}
+			{/each}
+		</div>
+	</section>
+{/if}
 
 <section>
 	<h2 class="mb-6 text-xl font-semibold">Your completions</h2>
@@ -50,4 +67,7 @@
 
 <p class="mt-8 text-center text-sm text-muted">
 	<a href="/u/{data.user.username}" class="hover:text-accent">View public profile →</a>
+	{#if data.isAdmin}
+		· <a href="/admin/badges" class="hover:text-accent">Admin badges</a>
+	{/if}
 </p>

@@ -81,6 +81,58 @@ async function fetchRawgGames(params: URLSearchParams): Promise<Response> {
 	}
 }
 
+type RawgStoreRow = { storeId: number; url: string };
+
+const storesCache = new Map<number, { links: RawgStoreRow[]; expiresAt: number }>();
+
+/**
+ * Fetch store URLs for a RAWG game (Steam, Epic, GOG, …).
+ * Cached 15 min; one request per rawgId.
+ */
+export async function fetchGameStoreLinks(rawgId: number): Promise<RawgStoreRow[]> {
+	if (!hasRawgApiKey() || !Number.isFinite(rawgId)) return [];
+
+	const cached = storesCache.get(rawgId);
+	if (cached && Date.now() < cached.expiresAt) return cached.links;
+
+	return withConcurrency(async () => {
+		requestCount += 1;
+		const params = new URLSearchParams({ key: env.RAWG_API_KEY!.trim() });
+		const controller = new AbortController();
+		const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+		try {
+			const response = await fetch(`${RAWG_BASE}/games/${rawgId}/stores?${params}`, {
+				signal: controller.signal,
+				headers: { Accept: 'application/json' }
+			});
+
+			if (!response.ok) {
+				if (response.status !== 404) {
+					console.warn('RAWG stores failed:', response.status);
+				}
+				return [];
+			}
+
+			const data = (await response.json()) as {
+				results?: Array<{ store_id?: number; url?: string }>;
+			};
+
+			const links: RawgStoreRow[] = (data.results ?? [])
+				.map((r) => ({
+					storeId: Number(r.store_id),
+					url: String(r.url ?? '').trim()
+				}))
+				.filter((r) => Number.isFinite(r.storeId) && r.url);
+
+			storesCache.set(rawgId, { links, expiresAt: Date.now() + CACHE_TTL_MS });
+			return links;
+		} finally {
+			clearTimeout(timer);
+		}
+	});
+}
+
 async function requestSearch(normalized: string): Promise<RawgGame[]> {
 	const params = new URLSearchParams({
 		search: normalized,

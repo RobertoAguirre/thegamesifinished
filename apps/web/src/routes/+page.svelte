@@ -1,8 +1,11 @@
 <script lang="ts">
+	import AdSlot from '$lib/components/AdSlot.svelte';
 	import CompletionCard from '$lib/components/CompletionCard.svelte';
 	import { SignUpButton } from 'svelte-clerk';
 
 	let { data } = $props();
+
+	const FEED_AD_EVERY = 6;
 </script>
 
 <section class="mb-16 text-center">
@@ -38,8 +41,13 @@
 		</div>
 	{:else}
 		<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-			{#each data.completions as completion (completion.id)}
+			{#each data.completions as completion, i (completion.id)}
 				<CompletionCard {completion} />
+				{#if (i + 1) % FEED_AD_EVERY === 0}
+					<div class="col-span-full">
+						<AdSlot position="feed-inline" />
+					</div>
+				{/if}
 			{/each}
 		</div>
 	{/if}
