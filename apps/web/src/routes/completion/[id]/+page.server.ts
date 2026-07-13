@@ -11,6 +11,7 @@ import {
 } from '$lib/server/comments';
 import { m } from '$lib/paraglide/messages.js';
 import { getSiteOrigin } from '$lib/server/origin';
+import { getRecommendationsForCompletion } from '$lib/server/recommendations';
 import { getUserByClerkId } from '$lib/server/users';
 import { ensureBadgesSeeded, listActiveBadges } from '$lib/server/progression/badges';
 import type { Actions, PageServerLoad } from './$types';
@@ -31,6 +32,13 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 		: serialized.mediaKey
 			? `${siteOrigin}/api/media/${serialized.mediaKey}`
 			: serialized.gameImageUrl;
+
+	const recommendations = await getRecommendationsForCompletion({
+		gameTitle: completion.gameTitle,
+		rawgId: completion.rawgId,
+		platforms: completion.platforms,
+		limit: 4
+	});
 
 	let celebration: {
 		badges: Array<{ slug: string; name: string; description: string; iconEmoji: string }>;
@@ -63,6 +71,7 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 	return {
 		completion: serialized,
 		comments: comments.map(serializeComment),
+		recommendations,
 		siteOrigin,
 		canonicalUrl: `${siteOrigin}/completion/${serialized.id}`,
 		ogImage,

@@ -10,6 +10,7 @@
 	"meta_description_home": "Show off the games you've completed. Upload proof, build your profile, and share your wins.",
 	"footer_tagline": "Built for gamers who finish what they start.",
 	"footer_game_data_by": "Game data by",
+	"footer_copyright": "© {year} Roberto Aguirre",
 	"home_eyebrow": "Your gaming trophy case",
 	"home_headline_line1": "Finished a game?",
 	"home_headline_accent": "Show the world.",
@@ -140,5 +141,11 @@
 	"rank_commander": "Commander",
 	"rank_general": "General",
 	"rank_legend": "Legend",
-	"language_switcher_label": "Language"
+	"language_switcher_label": "Language",
+	"rec_section_title": "You might also like",
+	"rec_section_lead": "You finished {gameTitle}. Maybe try these:",
+	"rec_reason_similar": "Similar",
+	"rec_reason_genre": "Same genre",
+	"rec_reason_platform": "Same platform",
+	"rec_reason_community": "Popular with players like you"
 }

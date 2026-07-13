@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { page } from '$app/state';
 	import { m } from '$lib/paraglide/messages.js';
-	import { getLocale, locales, localizeHref } from '$lib/paraglide/runtime.js';
+	import { getLocale, locales, setLocale } from '$lib/paraglide/runtime.js';
+	import type { Locale } from '$lib/paraglide/runtime.js';
 
 	const localeLabels: Record<string, () => string> = {
 		es: () => m.locale_name_es(),
@@ -12,6 +12,12 @@
 		es: 'ES',
 		en: 'EN'
 	};
+
+	function switchLocale(locale: Locale) {
+		if (locale === getLocale()) return;
+		// Persists cookie + navigates to localized URL (required with preferredLanguage).
+		setLocale(locale);
+	}
 </script>
 
 <nav
@@ -19,17 +25,16 @@
 	aria-label={m.language_switcher_label()}
 >
 	{#each locales as locale}
-		<a
-			href={localizeHref(page.url.pathname, { locale })}
-			data-sveltekit-reload
-			hreflang={locale}
+		<button
+			type="button"
+			onclick={() => switchLocale(locale)}
 			title={localeLabels[locale]?.() ?? locale}
 			class="rounded-full px-2.5 py-1 transition-colors {getLocale() === locale
 				? 'bg-accent text-white'
 				: 'text-muted hover:text-white'}"
-			aria-current={getLocale() === locale ? 'page' : undefined}
+			aria-pressed={getLocale() === locale}
 		>
 			{shortLabels[locale] ?? locale.toUpperCase()}
-		</a>
+		</button>
 	{/each}
 </nav>

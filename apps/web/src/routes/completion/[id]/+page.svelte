@@ -2,6 +2,7 @@
 	import AdSlot from '$lib/components/AdSlot.svelte';
 	import AffiliateButton from '$lib/components/AffiliateButton.svelte';
 	import CelebrationModal from '$lib/components/CelebrationModal.svelte';
+	import Recommendations from '$lib/components/Recommendations.svelte';
 	import ShareButtons from '$lib/components/ShareButtons.svelte';
 	import { track, trackCompletionPageview } from '$lib/analytics/client';
 	import { AnalyticsEvents } from '$lib/analytics/events';
@@ -144,6 +145,11 @@
 			</div>
 		</div>
 	</div>
+
+	<Recommendations
+		finishedTitle={data.completion.gameTitle}
+		recommendations={data.recommendations}
+	/>
 
 	{#if data.isOwner && availablePlatforms.length > 0}
 		<section class="mb-6 rounded-2xl border border-border bg-surface p-6">

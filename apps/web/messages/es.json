@@ -10,6 +10,7 @@
 	"meta_description_home": "Muestra los juegos que terminaste. Sube prueba, arma tu perfil y comparte tus victorias.",
 	"footer_tagline": "Hecho para gamers que terminan lo que empiezan.",
 	"footer_game_data_by": "Datos de juegos por",
+	"footer_copyright": "© {year} Roberto Aguirre",
 	"home_eyebrow": "Tu vitrina de trofeos gamer",
 	"home_headline_line1": "¿Terminaste un juego?",
 	"home_headline_accent": "Muéstralo al mundo.",
@@ -140,5 +141,11 @@
 	"rank_commander": "Comandante",
 	"rank_general": "General",
 	"rank_legend": "Leyenda",
-	"language_switcher_label": "Idioma"
+	"language_switcher_label": "Idioma",
+	"rec_section_title": "Te podría gustar",
+	"rec_section_lead": "Acabaste {gameTitle}. Tal vez te gusten estos:",
+	"rec_reason_similar": "Similar",
+	"rec_reason_genre": "Mismo género",
+	"rec_reason_platform": "Misma plataforma",
+	"rec_reason_community": "Popular entre jugadores como tú"
 }

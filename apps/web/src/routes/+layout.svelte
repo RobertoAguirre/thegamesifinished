@@ -53,7 +53,10 @@
 			{@render children()}
 		</main>
 		<footer class="border-t border-border/60 py-8 text-center text-sm text-muted">
-			<p>{m.footer_tagline()}</p>
+			<p class="text-base font-medium tracking-tight text-white/90 sm:text-lg">
+				{m.footer_tagline()}
+			</p>
+			<p class="mt-3">{m.footer_copyright({ year: new Date().getFullYear() })}</p>
 			{#if data.rawgEnabled}
 				<p class="mt-2">
 					{m.footer_game_data_by()}
