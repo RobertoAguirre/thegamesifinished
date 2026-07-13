@@ -2,6 +2,7 @@
 	import { track } from '$lib/analytics/client';
 	import { AnalyticsEvents } from '$lib/analytics/events';
 	import { resolveAffiliateTarget } from '$lib/config/affiliate';
+	import { m } from '$lib/paraglide/messages.js';
 	import type { StoreLink } from '@tgif/db';
 
 	interface Props {
@@ -21,6 +22,9 @@
 	}: Props = $props();
 
 	const target = $derived(resolveAffiliateTarget(gameTitle, storeLinks, storeUrl));
+	const label = $derived(
+		target?.store === 'instant_gaming' ? m.affiliate_get_game() : m.affiliate_get_game_steam()
+	);
 
 	function onClick() {
 		if (!target) return;
@@ -41,6 +45,6 @@
 		onclick={onClick}
 		class="inline-flex items-center text-sm text-muted underline-offset-4 hover:text-accent hover:underline transition-colors {className}"
 	>
-		{target.label}
+		{label}
 	</a>
 {/if}

@@ -1,4 +1,5 @@
 import { fail, redirect } from '@sveltejs/kit';
+import { m } from '$lib/paraglide/messages.js';
 import {
 	deleteCompletion,
 	getCompletionsByUser,
@@ -42,14 +43,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 export const actions: Actions = {
 	delete: async ({ request, locals }) => {
 		const { userId } = locals.auth();
-		if (!userId) return fail(401, { error: 'You must be signed in.' });
+		if (!userId) return fail(401, { error: m.error_signed_in() });
 
 		const form = await request.formData();
 		const id = String(form.get('id') ?? '').trim();
-		if (!id) return fail(400, { error: 'Missing completion id.' });
+		if (!id) return fail(400, { error: m.error_missing_completion_id() });
 
 		const deleted = await deleteCompletion(id, userId);
-		if (!deleted) return fail(404, { error: 'Completion not found.' });
+		if (!deleted) return fail(404, { error: m.error_completion_not_found() });
 
 		return { success: true };
 	}

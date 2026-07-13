@@ -1,4 +1,5 @@
 import { fail, isRedirect, redirect } from '@sveltejs/kit';
+import { m } from '$lib/paraglide/messages.js';
 import { createCompletion } from '$lib/server/completions';
 import { hasRawgApiKey } from '$lib/server/rawg';
 import { getUserByClerkId } from '$lib/server/users';
@@ -13,10 +14,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 export const actions: Actions = {
 	default: async ({ request, locals }) => {
 		const { userId } = locals.auth();
-		if (!userId) return fail(401, { error: 'You must be signed in.' });
+		if (!userId) return fail(401, { error: m.error_signed_in() });
 
 		const user = await getUserByClerkId(userId);
-		if (!user) return fail(401, { error: 'User not found.' });
+		if (!user) return fail(401, { error: m.error_user_not_found() });
 
 		const form = await request.formData();
 		const gameTitle = String(form.get('gameTitle') ?? '').trim();
@@ -32,27 +33,27 @@ export const actions: Actions = {
 		const mediaFile = form.get('media') as File | null;
 
 		if (!gameTitle) {
-			return fail(400, { error: 'Game title is required.' });
+			return fail(400, { error: m.error_game_title_required() });
 		}
 
 		const completedAt = completedAtRaw ? new Date(completedAtRaw) : new Date();
 		if (Number.isNaN(completedAt.getTime())) {
-			return fail(400, { error: 'Invalid completion date.' });
+			return fail(400, { error: m.error_invalid_completion_date() });
 		}
 
 		const startedAt = startedAtRaw ? new Date(startedAtRaw) : undefined;
 		if (startedAt && Number.isNaN(startedAt.getTime())) {
-			return fail(400, { error: 'Invalid start date.' });
+			return fail(400, { error: m.error_invalid_start_date() });
 		}
 
 		const hoursPlayed = hoursRaw ? Number(hoursRaw) : undefined;
 		if (hoursPlayed != null && (!Number.isFinite(hoursPlayed) || hoursPlayed < 0)) {
-			return fail(400, { error: 'Invalid hours played.' });
+			return fail(400, { error: m.error_invalid_hours() });
 		}
 
 		const difficultyRating = Number(difficultyRaw);
 		if (!Number.isFinite(difficultyRating) || difficultyRating < 1 || difficultyRating > 5) {
-			return fail(400, { error: 'Difficulty must be 1–5.' });
+			return fail(400, { error: m.error_difficulty_range() });
 		}
 
 		const rawgId = rawgIdRaw ? Number(rawgIdRaw) : undefined;
@@ -92,7 +93,7 @@ export const actions: Actions = {
 			);
 		} catch (error) {
 			if (isRedirect(error)) throw error;
-			const message = error instanceof Error ? error.message : 'Failed to save completion.';
+			const message = error instanceof Error ? error.message : m.error_save_failed();
 			return fail(400, { error: message });
 		}
 	}

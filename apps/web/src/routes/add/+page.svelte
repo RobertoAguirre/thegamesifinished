@@ -1,6 +1,7 @@
 <script lang="ts">
 	import GameSearch from '$lib/components/GameSearch.svelte';
 	import { GAME_PLATFORMS } from '$lib/config/platforms';
+	import { m } from '$lib/paraglide/messages.js';
 	import { enhance } from '$app/forms';
 
 	let { form, data } = $props();
@@ -15,8 +16,8 @@
 </script>
 
 <section class="mx-auto max-w-xl">
-	<h1 class="mb-2 text-3xl font-bold">Log a completed game</h1>
-	<p class="mb-8 text-muted">Add proof, pick the date you finished, and share your win.</p>
+	<h1 class="mb-2 text-3xl font-bold">{m.add_title()}</h1>
+	<p class="mb-8 text-muted">{m.add_subtitle()}</p>
 
 	{#if form?.error}
 		<div class="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
@@ -43,7 +44,7 @@
 
 		<div class="grid gap-4 sm:grid-cols-2">
 			<div>
-				<label for="completedAt" class="mb-2 block text-sm font-medium">Date finished</label>
+				<label for="completedAt" class="mb-2 block text-sm font-medium">{m.add_date_finished()}</label>
 				<input
 					id="completedAt"
 					name="completedAt"
@@ -55,7 +56,7 @@
 				/>
 			</div>
 			<div>
-				<label for="startedAt" class="mb-2 block text-sm font-medium">Date started (optional)</label>
+				<label for="startedAt" class="mb-2 block text-sm font-medium">{m.add_date_started()}</label>
 				<input
 					id="startedAt"
 					name="startedAt"
@@ -67,10 +68,8 @@
 		</div>
 
 		<div>
-			<p class="mb-1 text-sm font-medium">Platforms (optional)</p>
-			<p class="mb-3 text-xs text-muted">
-				Check every hardware platform where you finished this game (not the store — Steam / Epic / GOG don’t count).
-			</p>
+			<p class="mb-1 text-sm font-medium">{m.add_platforms()}</p>
+			<p class="mb-3 text-xs text-muted">{m.add_platforms_hint()}</p>
 			<div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
 				{#each GAME_PLATFORMS as platform}
 					<label
@@ -84,7 +83,7 @@
 		</div>
 
 		<div>
-			<label for="hoursPlayed" class="mb-2 block text-sm font-medium">Hours played (optional)</label>
+			<label for="hoursPlayed" class="mb-2 block text-sm font-medium">{m.add_hours()}</label>
 			<input
 				id="hoursPlayed"
 				name="hoursPlayed"
@@ -97,27 +96,23 @@
 		</div>
 
 		<div>
-			<label for="difficultyRating" class="mb-2 block text-sm font-medium"
-				>How hard was it? (1 easy → 5 extreme)</label
-			>
+			<label for="difficultyRating" class="mb-2 block text-sm font-medium">{m.add_difficulty()}</label>
 			<select
 				id="difficultyRating"
 				name="difficultyRating"
 				bind:value={difficulty}
 				class="w-full rounded-xl border border-border bg-surface px-4 py-3 outline-none focus:border-accent"
 			>
-				<option value="1">1 — Easy</option>
-				<option value="2">2 — Mild</option>
-				<option value="3">3 — Medium</option>
-				<option value="4">4 — Hard</option>
-				<option value="5">5 — Extreme</option>
+				<option value="1">{m.difficulty_1()}</option>
+				<option value="2">{m.difficulty_2()}</option>
+				<option value="3">{m.difficulty_3()}</option>
+				<option value="4">{m.difficulty_4()}</option>
+				<option value="5">{m.difficulty_5()}</option>
 			</select>
 		</div>
 
 		<div>
-			<label for="media" class="mb-2 block text-sm font-medium">
-				Proof (screenshot or short clip)
-			</label>
+			<label for="media" class="mb-2 block text-sm font-medium">{m.add_media()}</label>
 			<input
 				id="media"
 				name="media"
@@ -125,16 +120,16 @@
 				accept="image/*,video/mp4,video/webm,video/quicktime"
 				class="w-full rounded-xl border border-dashed border-border bg-surface px-4 py-6 text-sm text-muted file:mr-4 file:rounded-lg file:border-0 file:bg-accent file:px-4 file:py-2 file:text-white"
 			/>
-			<p class="mt-2 text-xs text-muted">Images up to 10MB · Videos up to 25MB</p>
+			<p class="mt-2 text-xs text-muted">{m.add_media_hint()}</p>
 		</div>
 
 		<div>
-			<label for="notes" class="mb-2 block text-sm font-medium">Notes (optional)</label>
+			<label for="notes" class="mb-2 block text-sm font-medium">{m.add_notes()}</label>
 			<textarea
 				id="notes"
 				name="notes"
 				rows="3"
-				placeholder="How was the ending? Any highlights?"
+				placeholder={m.add_notes_placeholder()}
 				class="w-full rounded-xl border border-border bg-surface px-4 py-3 outline-none focus:border-accent"
 			></textarea>
 		</div>
@@ -144,7 +139,7 @@
 			disabled={submitting || !gameTitle.trim()}
 			class="w-full rounded-xl bg-accent py-3.5 font-semibold hover:bg-accent-hover disabled:opacity-50 transition-colors"
 		>
-			{submitting ? 'Saving...' : 'Save & share'}
+			{submitting ? m.add_saving() : m.add_save()}
 		</button>
 	</form>
 </section>

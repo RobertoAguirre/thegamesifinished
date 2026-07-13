@@ -1,6 +1,7 @@
 <script lang="ts">
 	import AffiliateButton from '$lib/components/AffiliateButton.svelte';
 	import { enhance } from '$app/forms';
+	import { m } from '$lib/paraglide/messages.js';
 	import { formatDate } from '$lib/utils';
 	import type { StoreLink } from '@tgif/db';
 
@@ -42,7 +43,7 @@
 				{:else}
 					<img
 						src="/api/media/{completion.mediaKey}"
-						alt="Proof for {completion.gameTitle}"
+						alt={completion.gameTitle}
 						class="h-full w-full object-cover transition-transform group-hover:scale-[1.02]"
 					/>
 				{/if}
@@ -61,13 +62,13 @@
 			<div class="mb-2 flex items-start justify-between gap-3">
 				<h3 class="text-lg font-semibold leading-snug">{completion.gameTitle}</h3>
 				<span class="shrink-0 rounded-full bg-success/10 px-2.5 py-1 text-xs font-medium text-success">
-					Done
+					{m.done_badge()}
 				</span>
 			</div>
 
 			<p class="text-sm text-muted">
 				<span class="hover:text-accent">{completion.displayName}</span>
-				· finished {formatDate(completion.completedAt)}
+				· {m.finished_on_date({ date: formatDate(completion.completedAt) })}
 			</p>
 
 			{#if completion.platforms?.length}
@@ -82,7 +83,7 @@
 
 	<div class="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 pb-5 text-xs text-muted">
 		<a href="/u/{completion.username}" class="hover:text-accent transition-colors">
-			View @{completion.username}'s profile
+			{m.view_profile({ username: completion.username })}
 		</a>
 		<AffiliateButton
 			gameTitle={completion.gameTitle}
@@ -96,7 +97,7 @@
 				action="?/delete"
 				class="ml-auto"
 				use:enhance={({ cancel }) => {
-					const ok = confirm(`Delete "${completion.gameTitle}"? This cannot be undone.`);
+					const ok = confirm(m.delete_confirm({ gameTitle: completion.gameTitle }));
 					if (!ok) {
 						cancel();
 						return;
@@ -114,7 +115,7 @@
 					disabled={deleting}
 					class="text-red-400/80 hover:text-red-300 disabled:opacity-50 transition-colors"
 				>
-					{deleting ? 'Deleting...' : 'Delete'}
+					{deleting ? m.deleting() : m.delete()}
 				</button>
 			</form>
 		{/if}

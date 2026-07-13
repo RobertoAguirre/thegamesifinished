@@ -1,6 +1,7 @@
 <script lang="ts">
 	import AdSlot from '$lib/components/AdSlot.svelte';
 	import CompletionCard from '$lib/components/CompletionCard.svelte';
+	import { m } from '$lib/paraglide/messages.js';
 	import { SignUpButton } from 'svelte-clerk';
 
 	let { data } = $props();
@@ -10,18 +11,17 @@
 
 <section class="mb-16 text-center">
 	<div class="mx-auto max-w-2xl">
-		<p class="mb-4 text-sm font-medium uppercase tracking-widest text-accent">Your gaming trophy case</p>
+		<p class="mb-4 text-sm font-medium uppercase tracking-widest text-accent">{m.home_eyebrow()}</p>
 		<h1 class="mb-6 text-4xl font-bold tracking-tight sm:text-5xl">
-			Finished a game?<br />
-			<span class="text-accent">Show the world.</span>
+			{m.home_headline_line1()}<br />
+			<span class="text-accent">{m.home_headline_accent()}</span>
 		</h1>
 		<p class="mb-8 text-lg text-muted">
-			Upload screenshots or clips as proof, track every game you've beaten, and share your wins on
-			social media.
+			{m.home_subhead()}
 		</p>
 		<SignUpButton mode="modal">
 			<button class="rounded-full bg-accent px-8 py-3.5 text-base font-semibold hover:bg-accent-hover transition-colors">
-				Start your profile — it's free
+				{m.home_cta()}
 			</button>
 		</SignUpButton>
 	</div>
@@ -30,14 +30,14 @@
 <section>
 	<div class="mb-8 flex items-end justify-between">
 		<div>
-			<h2 class="text-2xl font-semibold">Recent wins</h2>
-			<p class="text-sm text-muted">Games recently finished by the community</p>
+			<h2 class="text-2xl font-semibold">{m.home_recent_wins()}</h2>
+			<p class="text-sm text-muted">{m.home_recent_wins_sub()}</p>
 		</div>
 	</div>
 
 	{#if data.completions.length === 0}
 		<div class="rounded-2xl border border-dashed border-border p-12 text-center">
-			<p class="text-muted">No completions yet. Be the first to log a win!</p>
+			<p class="text-muted">{m.home_empty()}</p>
 		</div>
 	{:else}
 		<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

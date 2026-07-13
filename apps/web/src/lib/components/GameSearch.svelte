@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages.js';
+
 	interface GameResult {
 		id: number;
 		name: string;
@@ -108,11 +110,11 @@
 </script>
 
 <div class="space-y-2">
-	<label for="game-search" class="block text-sm font-medium">Game title</label>
+	<label for="game-search" class="block text-sm font-medium">{m.game_title_label()}</label>
 
 	{#if !rawgEnabled}
 		<p class="text-xs text-muted">
-			Game search is off — enter the title manually. Add <code class="text-accent">RAWG_API_KEY</code> to enable autocomplete.
+			{m.game_search_off()}
 		</p>
 	{/if}
 
@@ -125,7 +127,7 @@
 			name={searchMode ? undefined : name}
 			type="text"
 			required={!searchMode}
-			placeholder={rawgEnabled ? 'Search for a game...' : 'Enter game title...'}
+			placeholder={rawgEnabled ? m.game_search_placeholder() : m.game_manual_placeholder()}
 			value={query || value}
 			oninput={onInput}
 			onkeydown={onKeydown}
@@ -134,7 +136,7 @@
 		/>
 
 		{#if loading}
-			<span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">Searching...</span>
+			<span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">{m.game_searching()}</span>
 		{/if}
 
 		{#if results.length > 0}
@@ -160,12 +162,12 @@
 	</div>
 
 	{#if searchMode && query.trim() && !value}
-		<p class="text-xs text-muted">Pick a game from the list (Enter selects the first result).</p>
+		<p class="text-xs text-muted">{m.game_pick_hint()}</p>
 	{/if}
 
 	{#if rawgEnabled && !manualMode}
 		<button type="button" onclick={useManual} class="text-xs text-muted hover:text-accent">
-			Can't find your game? Enter it manually
+			{m.game_manual_link()}
 		</button>
 	{/if}
 </div>

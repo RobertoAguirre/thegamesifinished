@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { track } from '$lib/analytics/client';
 	import { AnalyticsEvents } from '$lib/analytics/events';
+	import { m } from '$lib/paraglide/messages.js';
 	import { absoluteUrl, shareText } from '$lib/utils';
 
 	interface Props {
@@ -58,7 +59,7 @@
 </script>
 
 <div class="space-y-4">
-	<p class="text-sm text-muted">Share your win and invite friends to show off theirs.</p>
+	<p class="text-sm text-muted">{m.share_intro()}</p>
 
 	{#if canNativeShare}
 		<button
@@ -66,7 +67,7 @@
 			onclick={nativeShare}
 			class="w-full rounded-xl bg-accent px-4 py-3.5 text-sm font-semibold hover:bg-accent-hover transition-colors"
 		>
-			Share
+			{m.share_button()}
 		</button>
 	{/if}
 
@@ -96,7 +97,7 @@
 			onclick={() => copyCaption('instagram')}
 			class="flex items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-3 text-sm font-medium hover:border-[#e1306c] hover:text-[#e1306c] transition-colors"
 		>
-			Copy for Instagram
+			{m.share_copy_instagram()}
 		</button>
 
 		<button
@@ -104,7 +105,7 @@
 			onclick={() => copyCaption('tiktok')}
 			class="flex items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-3 text-sm font-medium hover:border-[#69c9d0] hover:text-[#69c9d0] transition-colors"
 		>
-			Copy for TikTok
+			{m.share_copy_tiktok()}
 		</button>
 	</div>
 
@@ -113,10 +114,8 @@
 		onclick={copyLink}
 		class="w-full rounded-xl border border-dashed border-border px-4 py-3 text-sm text-muted hover:border-accent hover:text-accent transition-colors"
 	>
-		{copied ? 'Copied!' : 'Copy link'}
+		{copied ? m.share_copied() : m.share_copy_link()}
 	</button>
 
-	<p class="text-xs text-muted">
-		On phones, Share opens your apps. Instagram and TikTok may still need a pasted caption.
-	</p>
+	<p class="text-xs text-muted">{m.share_hint()}</p>
 </div>

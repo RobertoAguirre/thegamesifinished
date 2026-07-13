@@ -38,7 +38,7 @@ SvelteKit reads **`apps/web/.env`**, not the root `.env`.
 | `MONGODB_URI` | MongoDB Atlas connection string |
 | `RAWG_API_KEY` | Game search (https://rawg.io/apidocs) |
 | `UPLOAD_DIR` | Local: `./uploads` · Render: `/var/data/uploads` |
-| `ORIGIN` | Testing: `https://thegamesifinished.onrender.com` · Later: `https://www.gamesifinished.com` |
+| `ORIGIN` | Production: `https://gamesifinished.com` · Staging: `https://thegamesifinished.onrender.com` |
 | `BODY_SIZE_LIMIT` | `26M` (for video uploads) |
 | `HOST` | Render: `0.0.0.0` |
 | `NODE_VERSION` | `22` |
@@ -102,15 +102,15 @@ PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
 CLERK_SECRET_KEY=sk_...
 MONGODB_URI=mongodb+srv://...
 RAWG_API_KEY=...
-ORIGIN=https://thegamesifinished.onrender.com
+ORIGIN=https://gamesifinished.com
 ```
 
 `npm run start` → `node apps/web/build/index.js`
 
-5. Domains (now / later):
-   - **Now (testing):** `https://thegamesifinished.onrender.com` — add this in **Clerk → Domains**
-   - **Later:** link `https://www.gamesifinished.com` in Render → Custom Domains, then set `ORIGIN` to that URL and add it in Clerk too
-
+5. Domains:
+   - **Production:** `https://gamesifinished.com` (www → apex redirect in Render)
+   - **Staging:** `https://thegamesifinished.onrender.com`
+   - Add **both** hosts in **Clerk → Domains**, and set `ORIGIN` to `https://gamesifinished.com` in Render env when the custom domain is live.
 ## License
 
 MIT — hobby project.

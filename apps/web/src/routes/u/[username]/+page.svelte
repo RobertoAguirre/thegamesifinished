@@ -1,18 +1,28 @@
 <script lang="ts">
 	import CompletionCard from '$lib/components/CompletionCard.svelte';
+	import { m } from '$lib/paraglide/messages.js';
 
 	let { data } = $props();
 </script>
 
 <svelte:head>
-	<title>{data.user.displayName} — The Games I Finished</title>
+	<title>{m.profile_title({ displayName: data.user.displayName })}</title>
 	<meta
 		name="description"
-		content="{data.user.displayName} has finished {data.totalGames} games on The Games I Finished."
+		content={m.profile_meta_description({
+			displayName: data.user.displayName,
+			totalGames: data.totalGames
+		})}
 	/>
 	<meta property="og:url" content="{data.siteOrigin}/u/{data.user.username}" />
-	<meta property="og:title" content="{data.user.displayName} — The Games I Finished" />
-	<meta property="og:description" content="{data.user.displayName} has finished {data.totalGames} games." />
+	<meta property="og:title" content={m.profile_title({ displayName: data.user.displayName })} />
+	<meta
+		property="og:description"
+		content={m.profile_og_description({
+			displayName: data.user.displayName,
+			totalGames: data.totalGames
+		})}
+	/>
 	<meta name="twitter:card" content="summary" />
 </svelte:head>
 
@@ -30,13 +40,13 @@
 
 	<div class="rounded-2xl border border-border bg-surface px-8 py-4 text-center">
 		<p class="text-4xl font-bold text-accent">{data.totalGames}</p>
-		<p class="text-sm text-muted">games finished</p>
+		<p class="text-sm text-muted">{m.dashboard_games_finished()}</p>
 	</div>
 </section>
 
 {#if data.completions.length === 0}
 	<div class="rounded-2xl border border-dashed border-border p-12 text-center text-muted">
-		No public completions yet.
+		{m.profile_empty()}
 	</div>
 {:else}
 	<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

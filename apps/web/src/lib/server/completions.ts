@@ -148,6 +148,46 @@ export async function deleteCompletion(id: string, clerkId: string): Promise<boo
 	return true;
 }
 
+/** Append platforms to an owned completion. Returns updated platforms or null if forbidden. */
+export async function addPlatformsToCompletion(
+	id: string,
+	clerkId: string,
+	rawPlatforms: string[]
+): Promise<{ platforms: string[]; progress: ProgressResult } | null> {
+	const completion = await getCompletionById(id);
+	if (!completion || completion.clerkId !== clerkId) return null;
+
+	const incoming = normalizePlatforms(rawPlatforms);
+	if (incoming.length === 0) {
+		return { platforms: platformsOf(completion), progress: emptyProgress() };
+	}
+
+	const platforms = normalizePlatforms([...platformsOf(completion), ...incoming]);
+	const db = await getDb();
+	await db.collection<Completion>('completions').updateOne(
+		{ _id: completion._id },
+		{ $set: { platforms, platform: platforms[0] } }
+	);
+
+	const user = await db.collection<User>('users').findOne({ clerkId });
+	const progress = user
+		? await evaluateBadgesForUser(user)
+		: emptyProgress();
+
+	return { platforms, progress };
+}
+
+function emptyProgress(): ProgressResult {
+	return {
+		unlockedBadges: [],
+		previousRank: '',
+		newRank: '',
+		rankUp: false,
+		totalXp: 0,
+		xpGained: 0
+	};
+}
+
 export async function getCompletionsByUser(userId: User['_id'], limit = 50): Promise<Completion[]> {
 	const db = await getDb();
 	return db

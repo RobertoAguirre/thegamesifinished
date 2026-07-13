@@ -6,7 +6,7 @@ export const FEATURE_FLAGS = {
 	/** AdSlot renders reserved space / future provider only when true */
 	adsEnabled: false,
 	/** Affiliate “get this game” buttons */
-	affiliateLinksEnabled: true,
+	affiliateLinksEnabled: false,
 	/** Future sponsored challenge placements */
 	sponsoredChallengesEnabled: false,
 	/**

@@ -1,5 +1,6 @@
 import type { Comment } from '@tgif/db';
 import { ObjectId } from 'mongodb';
+import { m } from '$lib/paraglide/messages.js';
 import { getDb } from './db';
 
 const commentCooldown = new Map<string, number>();
@@ -29,20 +30,20 @@ export async function addComment(input: {
 	ip: string;
 }): Promise<{ ok: true; comment: Comment } | { ok: false; error: string }> {
 	if (!ObjectId.isValid(input.completionId)) {
-		return { ok: false, error: 'Invalid completion.' };
+		return { ok: false, error: m.error_invalid_completion() };
 	}
 
 	const now = Date.now();
 	const last = commentCooldown.get(input.ip) ?? 0;
 	if (now - last < COOLDOWN_MS) {
-		return { ok: false, error: 'Please wait a few seconds before commenting again.' };
+		return { ok: false, error: m.error_comment_cooldown() };
 	}
 
 	const authorName = cleanText(input.authorName, MAX_NAME);
 	const body = cleanText(input.body, MAX_BODY);
 
-	if (authorName.length < 2) return { ok: false, error: 'Name is required.' };
-	if (body.length < 2) return { ok: false, error: 'Comment is too short.' };
+	if (authorName.length < 2) return { ok: false, error: m.error_comment_name_required() };
+	if (body.length < 2) return { ok: false, error: m.error_comment_too_short() };
 
 	const doc: Omit<Comment, '_id'> = {
 		completionId: new ObjectId(input.completionId),

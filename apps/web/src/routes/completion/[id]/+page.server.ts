@@ -1,10 +1,15 @@
 import { error, fail } from '@sveltejs/kit';
-import { getCompletionById, serializeCompletion } from '$lib/server/completions';
+import {
+	addPlatformsToCompletion,
+	getCompletionById,
+	serializeCompletion
+} from '$lib/server/completions';
 import {
 	addComment,
 	getCommentsByCompletion,
 	serializeComment
 } from '$lib/server/comments';
+import { m } from '$lib/paraglide/messages.js';
 import { getSiteOrigin } from '$lib/server/origin';
 import { getUserByClerkId } from '$lib/server/users';
 import { ensureBadgesSeeded, listActiveBadges } from '$lib/server/progression/badges';
@@ -12,11 +17,12 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, url, locals }) => {
 	const completion = await getCompletionById(params.id);
-	if (!completion) error(404, 'Completion not found');
+	if (!completion) error(404, m.error_completion_not_found());
 
 	const comments = await getCommentsByCompletion(params.id);
 	const { userId } = locals.auth();
 	const sessionUser = userId ? await getUserByClerkId(userId) : null;
+	const isOwner = Boolean(userId && completion.clerkId === userId);
 
 	const siteOrigin = getSiteOrigin(url);
 	const serialized = serializeCompletion(completion);
@@ -61,6 +67,7 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 		canonicalUrl: `${siteOrigin}/completion/${serialized.id}`,
 		ogImage,
 		sessionName: sessionUser?.displayName ?? null,
+		isOwner,
 		celebration
 	};
 };
@@ -68,7 +75,9 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 export const actions: Actions = {
 	comment: async ({ request, params, getClientAddress, locals }) => {
 		const completion = await getCompletionById(params.id);
-		if (!completion) return fail(404, { commentError: 'Completion not found.', authorName: '', body: '' });
+		if (!completion) {
+			return fail(404, { commentError: m.error_comment_not_found(), authorName: '', body: '' });
+		}
 
 		const form = await request.formData();
 		const { userId } = locals.auth();
@@ -93,5 +102,21 @@ export const actions: Actions = {
 		}
 
 		return { commentSuccess: true, authorName: '', body: '' };
+	},
+
+	addPlatforms: async ({ request, params, locals }) => {
+		const { userId } = locals.auth();
+		if (!userId) return fail(401, { platformError: m.error_signed_in() });
+
+		const form = await request.formData();
+		const platforms = form.getAll('platforms').map((v) => String(v));
+		if (platforms.length === 0) {
+			return fail(400, { platformError: m.error_select_platform() });
+		}
+
+		const result = await addPlatformsToCompletion(params.id, userId, platforms);
+		if (!result) return fail(403, { platformError: m.error_owner_only_platforms() });
+
+		return { platformSuccess: true };
 	}
 };
