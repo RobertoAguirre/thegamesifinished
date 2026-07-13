@@ -59,7 +59,7 @@
 	{:else}
 		<div class="grid gap-6 sm:grid-cols-2">
 			{#each data.completions as completion (completion.id)}
-				<CompletionCard {completion} />
+				<CompletionCard {completion} canDelete />
 			{/each}
 		</div>
 	{/if}

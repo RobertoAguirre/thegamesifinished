@@ -4,7 +4,7 @@ import { trackServer } from '$lib/analytics/server';
 import { AnalyticsEvents } from '$lib/analytics/events';
 import { getDb } from './db';
 import { resolveGameStoreData } from './games';
-import { saveMedia } from './media';
+import { deleteMediaFile, saveMedia } from './media';
 import { generateOgCard } from './og';
 import { getCommunityDifficultyTier, xpForTier } from './progression/difficulty';
 import { evaluateBadgesForUser, type ProgressResult } from './progression/badges';
@@ -119,6 +119,21 @@ export async function getCompletionById(id: string): Promise<Completion | null> 
 	if (!ObjectId.isValid(id)) return null;
 	const db = await getDb();
 	return db.collection<Completion>('completions').findOne({ _id: new ObjectId(id) });
+}
+
+/** Deletes a completion owned by `clerkId`. Returns false if missing or not owned. */
+export async function deleteCompletion(id: string, clerkId: string): Promise<boolean> {
+	const completion = await getCompletionById(id);
+	if (!completion || completion.clerkId !== clerkId) return false;
+
+	const db = await getDb();
+	await db.collection('completions').deleteOne({ _id: completion._id });
+	await db.collection('comments').deleteMany({ completionId: completion._id });
+
+	await deleteMediaFile(completion.mediaKey);
+	await deleteMediaFile(completion.ogImageKey);
+
+	return true;
 }
 
 export async function getCompletionsByUser(userId: User['_id'], limit = 50): Promise<Completion[]> {

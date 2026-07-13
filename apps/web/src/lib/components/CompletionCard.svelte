@@ -1,5 +1,6 @@
 <script lang="ts">
 	import AffiliateButton from '$lib/components/AffiliateButton.svelte';
+	import { enhance } from '$app/forms';
 	import { formatDate } from '$lib/utils';
 	import type { StoreLink } from '@tgif/db';
 
@@ -17,9 +18,11 @@
 			mediaKey?: string;
 			mediaType?: 'image' | 'video';
 		};
+		canDelete?: boolean;
 	}
 
-	let { completion }: Props = $props();
+	let { completion, canDelete = false }: Props = $props();
+	let deleting = $state(false);
 </script>
 
 <article
@@ -82,5 +85,33 @@
 			storeLinks={completion.storeLinks}
 			storeUrl={completion.storeUrl}
 		/>
+		{#if canDelete}
+			<form
+				method="POST"
+				action="?/delete"
+				class="ml-auto"
+				use:enhance={({ cancel }) => {
+					const ok = confirm(`Delete "${completion.gameTitle}"? This cannot be undone.`);
+					if (!ok) {
+						cancel();
+						return;
+					}
+					deleting = true;
+					return async ({ update }) => {
+						deleting = false;
+						await update();
+					};
+				}}
+			>
+				<input type="hidden" name="id" value={completion.id} />
+				<button
+					type="submit"
+					disabled={deleting}
+					class="text-red-400/80 hover:text-red-300 disabled:opacity-50 transition-colors"
+				>
+					{deleting ? 'Deleting...' : 'Delete'}
+				</button>
+			</form>
+		{/if}
 	</div>
 </article>

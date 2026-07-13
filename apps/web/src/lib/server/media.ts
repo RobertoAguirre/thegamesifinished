@@ -1,6 +1,6 @@
 import { env } from '$env/dynamic/private';
 import { createReadStream, existsSync, mkdirSync } from 'node:fs';
-import { stat } from 'node:fs/promises';
+import { stat, unlink } from 'node:fs/promises';
 import { extname, join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
@@ -96,4 +96,15 @@ export function mediaContentType(mediaKey: string): string {
 		'.mov': 'video/quicktime'
 	};
 	return map[ext] ?? 'application/octet-stream';
+}
+
+export async function deleteMediaFile(mediaKey: string | undefined): Promise<void> {
+	if (!mediaKey) return;
+	const filePath = getMediaPath(mediaKey);
+	if (!filePath) return;
+	try {
+		await unlink(filePath);
+	} catch {
+		// Best-effort cleanup; missing files are fine.
+	}
 }
