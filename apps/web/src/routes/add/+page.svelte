@@ -68,13 +68,22 @@
 		<div class="grid gap-4 sm:grid-cols-2">
 			<div>
 				<label for="platform" class="mb-2 block text-sm font-medium">Platform (optional)</label>
-				<input
+				<select
 					id="platform"
 					name="platform"
-					type="text"
-					placeholder="PC, Switch, Steam Deck..."
 					class="w-full rounded-xl border border-border bg-surface px-4 py-3 outline-none focus:border-accent"
-				/>
+				>
+					<option value="">Select platform</option>
+					<option value="PC">PC</option>
+					<option value="PlayStation 5">PlayStation 5</option>
+					<option value="PlayStation 4">PlayStation 4</option>
+					<option value="Xbox Series X|S">Xbox Series X|S</option>
+					<option value="Xbox One">Xbox One</option>
+					<option value="Nintendo Switch">Nintendo Switch</option>
+					<option value="Steam Deck">Steam Deck</option>
+					<option value="Mobile">Mobile</option>
+					<option value="Other">Other</option>
+				</select>
 			</div>
 			<div>
 				<label for="hoursPlayed" class="mb-2 block text-sm font-medium">Hours played (optional)</label>

@@ -30,6 +30,8 @@
 	let debounceTimer: ReturnType<typeof setTimeout>;
 	let abortController: AbortController | null = null;
 
+	const searchMode = $derived(rawgEnabled && !manualMode);
+
 	$effect(() => {
 		if (!rawgEnabled) manualMode = true;
 	});
@@ -62,9 +64,17 @@
 	function onInput(event: Event) {
 		const target = event.target as HTMLInputElement;
 		query = target.value;
-		value = target.value;
-		rawgId = null;
-		gameImageUrl = null;
+
+		if (searchMode) {
+			// Keep form title empty until a result is picked (or manual mode).
+			value = '';
+			rawgId = null;
+			gameImageUrl = null;
+		} else {
+			value = target.value;
+			rawgId = null;
+			gameImageUrl = null;
+		}
 
 		if (!rawgEnabled) return;
 
@@ -84,6 +94,16 @@
 	function useManual() {
 		manualMode = true;
 		results = [];
+		value = query;
+	}
+
+	function onKeydown(event: KeyboardEvent) {
+		if (event.key !== 'Enter') return;
+		// Never let Enter submit the parent form from this field.
+		event.preventDefault();
+		if (searchMode && results.length > 0) {
+			selectGame(results[0]);
+		}
 	}
 </script>
 
@@ -97,14 +117,19 @@
 	{/if}
 
 	<div class="relative">
+		{#if searchMode}
+			<input type="hidden" {name} value={value} />
+		{/if}
 		<input
 			id="game-search"
-			{name}
+			name={searchMode ? undefined : name}
 			type="text"
-			required
+			required={!searchMode}
 			placeholder={rawgEnabled ? 'Search for a game...' : 'Enter game title...'}
 			value={query || value}
 			oninput={onInput}
+			onkeydown={onKeydown}
+			autocomplete="off"
 			class="w-full rounded-xl border border-border bg-surface px-4 py-3 outline-none focus:border-accent"
 		/>
 
@@ -133,6 +158,10 @@
 			</ul>
 		{/if}
 	</div>
+
+	{#if searchMode && query.trim() && !value}
+		<p class="text-xs text-muted">Pick a game from the list (Enter selects the first result).</p>
+	{/if}
 
 	{#if rawgEnabled && !manualMode}
 		<button type="button" onclick={useManual} class="text-xs text-muted hover:text-accent">
