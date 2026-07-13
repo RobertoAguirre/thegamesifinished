@@ -13,5 +13,10 @@ export default defineConfig({
 			},
 			adapter: adapter()
 		})
-	]
+	],
+	// mongodb is CJS; bundling it into the ESM server build causes
+	// "require is not defined" in production (adapter-node).
+	ssr: {
+		external: ['mongodb']
+	}
 });
