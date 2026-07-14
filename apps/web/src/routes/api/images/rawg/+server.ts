@@ -1,8 +1,27 @@
 import { error } from '@sveltejs/kit';
-import { isRawgMediaUrl } from '$lib/rawgImage';
+import { isRawgMediaUrl, originalMediaUrl } from '$lib/rawgImage';
 import type { RequestHandler } from './$types';
 
 const MAX_BYTES = 8 * 1024 * 1024;
+
+async function fetchRawgImage(fetchFn: typeof fetch, target: string): Promise<Response> {
+	const headers = {
+		Accept: 'image/avif,image/webp,image/*,*/*;q=0.8',
+		'User-Agent': 'TheGamesIFinished/1.0 (+https://gamesifinished.com)'
+	};
+
+	let remote = await fetchFn(target, { headers, redirect: 'follow' });
+
+	// Si el resize no existe, cae a la imagen original que sí sirve la API/CDN.
+	if (!remote.ok && /\/media\/resize\/\d+\/-\//.test(target)) {
+		const original = originalMediaUrl(target);
+		if (original !== target) {
+			remote = await fetchFn(original, { headers, redirect: 'follow' });
+		}
+	}
+
+	return remote;
+}
 
 export const GET: RequestHandler = async ({ url, fetch }) => {
 	const target = url.searchParams.get('u');
@@ -12,13 +31,7 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 
 	let remote: Response;
 	try {
-		remote = await fetch(target, {
-			headers: {
-				Accept: 'image/avif,image/webp,image/*,*/*;q=0.8',
-				'User-Agent': 'TheGamesIFinished/1.0 (+https://gamesifinished.com)'
-			},
-			redirect: 'follow'
-		});
+		remote = await fetchRawgImage(fetch, target);
 	} catch {
 		error(502, 'Failed to fetch image');
 	}

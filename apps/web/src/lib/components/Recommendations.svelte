@@ -43,7 +43,7 @@
 					>
 						{#if game.backgroundImage}
 							<img
-								src={rawgImageSrc(game.backgroundImage, { width: 160, height: 160 })}
+								src={rawgImageSrc(game.backgroundImage, { width: 200 })}
 								alt=""
 								class="h-16 w-16 shrink-0 rounded-lg object-cover"
 								loading="lazy"
