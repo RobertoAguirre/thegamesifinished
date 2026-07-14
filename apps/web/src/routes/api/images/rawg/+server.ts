@@ -13,7 +13,10 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 	let remote: Response;
 	try {
 		remote = await fetch(target, {
-			headers: { Accept: 'image/avif,image/webp,image/*,*/*;q=0.8' },
+			headers: {
+				Accept: 'image/avif,image/webp,image/*,*/*;q=0.8',
+				'User-Agent': 'TheGamesIFinished/1.0 (+https://gamesifinished.com)'
+			},
 			redirect: 'follow'
 		});
 	} catch {
@@ -24,8 +27,8 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 		error(remote.status === 404 ? 404 : 502, 'Image unavailable');
 	}
 
-	const finalUrl = remote.url;
-	if (!isRawgMediaUrl(finalUrl)) {
+	const finalUrl = remote.url || target;
+	if (finalUrl && !isRawgMediaUrl(finalUrl)) {
 		error(502, 'Unexpected redirect');
 	}
 

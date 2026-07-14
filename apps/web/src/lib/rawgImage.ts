@@ -1,14 +1,40 @@
 /** Same-origin proxy so portadas RAWG no fallen por CDN/SSL/red del cliente. */
-const RAWG_MEDIA = /^https:\/\/media\.rawg\.io\/media\//i;
+const RAWG_MEDIA_HOSTS = new Set(['media.rawg.io', 'api.rawg.io']);
 
 export function isRawgMediaUrl(url: string | null | undefined): url is string {
-	return Boolean(url && RAWG_MEDIA.test(url));
+	if (!url) return false;
+	try {
+		const parsed = new URL(url);
+		if (parsed.protocol !== 'https:') return false;
+		if (!RAWG_MEDIA_HOSTS.has(parsed.hostname)) return false;
+		return parsed.pathname.startsWith('/media/');
+	} catch {
+		return false;
+	}
 }
 
-/** Inserta crop de RAWG: /media/games/... → /media/crop/W/H/games/... */
-export function cropRawgImage(url: string, width: number, height: number): string {
-	if (!isRawgMediaUrl(url) || url.includes('/media/crop/')) return url;
-	return url.replace('/media/', `/media/crop/${width}/${height}/`);
+/** Normaliza a la imagen original en media.rawg.io (sin crop/resize). */
+function originalMediaUrl(url: string): string {
+	try {
+		const parsed = new URL(url);
+		parsed.hostname = 'media.rawg.io';
+		parsed.pathname = parsed.pathname
+			.replace(/^\/media\/crop\/\d+\/\d+\//, '/media/')
+			.replace(/^\/media\/resize\/\d+\/-\//, '/media/');
+		return parsed.toString();
+	} catch {
+		return url;
+	}
+}
+
+/**
+ * Miniatura vía resize de RAWG (crop está roto / 404).
+ * /media/games/... → /media/resize/{width}/-/games/...
+ */
+export function sizedRawgImage(url: string, width: number): string {
+	if (!isRawgMediaUrl(url)) return url;
+	const original = originalMediaUrl(url);
+	return original.replace('/media/', `/media/resize/${Math.max(40, Math.round(width))}/-/`);
 }
 
 /**
@@ -22,8 +48,7 @@ export function rawgImageSrc(
 	if (!url) return undefined;
 	if (!isRawgMediaUrl(url)) return url;
 
-	const width = opts?.width ?? 600;
-	const height = opts?.height ?? 400;
-	const cropped = cropRawgImage(url, width, height);
-	return `/api/images/rawg?u=${encodeURIComponent(cropped)}`;
+	const width = opts?.width ?? 640;
+	const sized = sizedRawgImage(url, width);
+	return `/api/images/rawg?u=${encodeURIComponent(sized)}`;
 }
