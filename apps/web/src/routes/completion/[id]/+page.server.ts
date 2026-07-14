@@ -1,6 +1,7 @@
 import { error, fail } from '@sveltejs/kit';
 import {
 	addPlatformsToCompletion,
+	ensureOgCard,
 	getCompletionById,
 	serializeCompletion
 } from '$lib/server/completions';
@@ -22,8 +23,11 @@ import { ensureBadgesSeeded, listActiveBadges } from '$lib/server/progression/ba
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, url, locals }) => {
-	const completion = await getCompletionById(params.id);
+	let completion = await getCompletionById(params.id);
 	if (!completion) error(404, m.error_completion_not_found());
+
+	// Regenera la PNG OG (con portada) si es una victoria creada con el diseño viejo.
+	completion = await ensureOgCard(completion);
 
 	const comments = await getCommentsByCompletion(params.id);
 	const { userId } = locals.auth();
@@ -32,8 +36,9 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 
 	const siteOrigin = getSiteOrigin(url);
 	const serialized = serializeCompletion(completion);
+	const ogVersion = serialized.ogCardVersion ?? 1;
 	const ogImage = serialized.ogImageKey
-		? `${siteOrigin}/api/media/${serialized.ogImageKey}`
+		? `${siteOrigin}/api/media/${serialized.ogImageKey}?v=${ogVersion}`
 		: serialized.mediaKey
 			? `${siteOrigin}/api/media/${serialized.mediaKey}`
 			: serialized.gameImageUrl;

@@ -69,6 +69,8 @@ export interface Completion {
 	mediaKey?: string;
 	mediaType?: 'image' | 'video';
 	ogImageKey?: string;
+	/** Bump when OG card layout/cover logic changes so old PNGs regenerate. */
+	ogCardVersion?: number;
 	createdAt: Date;
 }
 

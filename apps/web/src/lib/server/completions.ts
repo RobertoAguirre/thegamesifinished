@@ -11,6 +11,9 @@ import { deleteReactionsForCompletion } from './reactions';
 import { getCommunityDifficultyTier, xpForTier } from './progression/difficulty';
 import { evaluateBadgesForUser, type ProgressResult } from './progression/badges';
 
+/** Subir cuando cambie el layout OG (p. ej. portada del juego) para regenerar PNGs viejos. */
+export const OG_CARD_VERSION = 2;
+
 export interface CreateCompletionInput {
 	user: User;
 	gameTitle: string;
@@ -93,6 +96,7 @@ export async function createCompletion(
 		mediaKey,
 		mediaType,
 		ogImageKey,
+		ogCardVersion: ogImageKey ? OG_CARD_VERSION : undefined,
 		createdAt: new Date()
 	};
 
@@ -137,6 +141,36 @@ export async function getCompletionById(id: string): Promise<Completion | null> 
 	if (!ObjectId.isValid(id)) return null;
 	const db = await getDb();
 	return db.collection<Completion>('completions').findOne({ _id: new ObjectId(id) });
+}
+
+/**
+ * Regenera la tarjeta OG si el diseño cambió (versión) o aún no existe.
+ * Así WhatsApp/Facebook ven la portada del juego en victorias antiguas tras el deploy.
+ */
+export async function ensureOgCard(completion: Completion): Promise<Completion> {
+	const needs =
+		!completion.ogImageKey ||
+		(completion.ogCardVersion ?? 1) < OG_CARD_VERSION;
+	if (!needs) return completion;
+
+	const key = await generateOgCard({
+		displayName: completion.displayName,
+		gameTitle: completion.gameTitle,
+		gameImageUrl: completion.gameImageUrl
+	});
+	if (!key) return completion;
+
+	const previous = completion.ogImageKey;
+	const db = await getDb();
+	await db.collection<Completion>('completions').updateOne(
+		{ _id: completion._id },
+		{ $set: { ogImageKey: key, ogCardVersion: OG_CARD_VERSION } }
+	);
+	if (previous && previous !== key) {
+		await deleteMediaFile(previous);
+	}
+
+	return { ...completion, ogImageKey: key, ogCardVersion: OG_CARD_VERSION };
 }
 
 /** Deletes a completion owned by `clerkId`. Returns false if missing or not owned. */
@@ -240,6 +274,7 @@ export function serializeCompletion(completion: Completion) {
 			(completion as { mediaId?: { toString(): string } }).mediaId?.toString(),
 		mediaType: completion.mediaType,
 		ogImageKey: completion.ogImageKey,
+		ogCardVersion: completion.ogCardVersion,
 		createdAt: completion.createdAt.toISOString()
 	};
 }

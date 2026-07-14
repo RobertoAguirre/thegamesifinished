@@ -129,7 +129,7 @@ export async function generateOgCard(input: {
 
 		const imageX = CARD_WIDTH - IMAGE_PANEL_WIDTH;
 		const coverSvg = cover
-			? `<image x="${imageX}" y="0" width="${IMAGE_PANEL_WIDTH}" height="${CARD_HEIGHT}" preserveAspectRatio="xMidYMid slice" href="${cover}"/>
+			? `<image x="${imageX}" y="0" width="${IMAGE_PANEL_WIDTH}" height="${CARD_HEIGHT}" preserveAspectRatio="xMidYMid slice" href="${cover}" xlink:href="${cover}"/>
   <rect x="${imageX}" y="0" width="${IMAGE_PANEL_WIDTH}" height="${CARD_HEIGHT}" fill="url(#fade)"/>`
 			: `<circle cx="1080" cy="-40" r="260" fill="#7c5cff" fill-opacity="0.18"/>`;
 
