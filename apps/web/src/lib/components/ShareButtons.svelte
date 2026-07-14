@@ -30,14 +30,17 @@
 	const caption = $derived(`${text}\n\n${url}`);
 	const encodedUrl = $derived(encodeURIComponent(url));
 	const encodedText = $derived(encodeURIComponent(text));
+	const encodedCaption = $derived(encodeURIComponent(caption));
 
 	let status = $state('');
-	/** Solo bloquea Instagram/TikTok; Facebook y X no se tocan. */
+	/** Solo bloquea Instagram/TikTok/compartir rápido; Facebook, X y WhatsApp no. */
 	let visualBusy = $state(false);
+	let canNativeShare = $state(false);
 	let canShareFiles = $state(false);
 	let cachedFile = $state<File | null>(null);
 
 	$effect(() => {
+		canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 		canShareFiles = false;
 		if (typeof navigator === 'undefined' || typeof navigator.canShare !== 'function') return;
 		try {
@@ -166,6 +169,32 @@
 		}
 	}
 
+	/**
+	 * Un toque en el celular: abre el menú del sistema con imagen + texto + enlace.
+	 * Desde ahí la gente elige WhatsApp (chats o Estados), Instagram, TikTok, etc.
+	 */
+	async function quickShare() {
+		if (visualBusy) return;
+		visualBusy = true;
+		trackShare('native');
+		try {
+			const file = await getShareFile();
+			if (file && canShareFiles) {
+				try {
+					await navigator.share({ files: [file], title: text, text: caption });
+					return;
+				} catch (error) {
+					if (error instanceof DOMException && error.name === 'AbortError') return;
+				}
+			}
+			await navigator.share({ title: text, text, url });
+		} catch {
+			// cancelado o no soportado — los botones por red siguen disponibles
+		} finally {
+			visualBusy = false;
+		}
+	}
+
 	async function copyLink() {
 		trackShare('copy_link');
 		await navigator.clipboard.writeText(url);
@@ -176,7 +205,39 @@
 <div class="space-y-4">
 	<p class="text-sm text-muted">{m.share_intro()}</p>
 
+	{#if canNativeShare}
+		<!-- Camino más rápido en celular: un toque y eliges la app (incluye Estados de WhatsApp). -->
+		<button
+			type="button"
+			onclick={quickShare}
+			disabled={visualBusy}
+			class="flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-black hover:opacity-90 disabled:opacity-60 transition-opacity"
+		>
+			{#if visualBusy}
+				<Spinner class="text-black" />
+			{:else}
+				<svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+					<path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" stroke-linecap="round" />
+					<path d="M12 15V3m0 0L8 7m4-4 4 4" stroke-linecap="round" stroke-linejoin="round" />
+				</svg>
+			{/if}
+			{m.share_quick()}
+		</button>
+	{/if}
+
 	<div class="grid gap-2 sm:grid-cols-2">
+		<!-- WhatsApp: enlace oficial, funciona en celular y WhatsApp Web. -->
+		<a
+			href="https://wa.me/?text={encodedCaption}"
+			target="_blank"
+			rel="noopener noreferrer"
+			onclick={() => trackShare('whatsapp')}
+			class="flex items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-3 text-sm font-medium hover:border-[#25D366] hover:text-[#25D366] transition-colors"
+		>
+			<ShareBrandIcon name="whatsapp" class="size-4 text-[#25D366]" />
+			WhatsApp
+		</a>
+
 		<!-- Facebook: sin cambios de comportamiento (sharer oficial). -->
 		<a
 			href="https://www.facebook.com/sharer/sharer.php?u={encodedUrl}"

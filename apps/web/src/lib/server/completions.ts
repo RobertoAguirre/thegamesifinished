@@ -55,7 +55,8 @@ export async function createCompletion(
 	const ogImageKey =
 		(await generateOgCard({
 			displayName: input.user.displayName,
-			gameTitle
+			gameTitle,
+			gameImageUrl: input.gameImageUrl
 		})) ?? undefined;
 
 	const { storeUrl, storeLinks } = await resolveGameStoreData({

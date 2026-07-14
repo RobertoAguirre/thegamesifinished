@@ -91,7 +91,7 @@
 
 	<div class="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 pb-5 text-xs text-muted">
 		<a href="/u/{completion.username}" class="hover:text-accent transition-colors">
-			{m.view_profile({ username: completion.username })}
+			{m.view_profile({ username: `@${completion.username}` })}
 		</a>
 		<AffiliateButton
 			gameTitle={completion.gameTitle}
