@@ -2,7 +2,8 @@
 	import AdSlot from '$lib/components/AdSlot.svelte';
 	import CompletionCard from '$lib/components/CompletionCard.svelte';
 	import { m } from '$lib/paraglide/messages.js';
-	import { SignUpButton } from 'svelte-clerk';
+	import { localizeHref } from '$lib/paraglide/runtime.js';
+	import { Show, SignUpButton } from 'svelte-clerk';
 
 	let { data } = $props();
 
@@ -19,11 +20,21 @@
 		<p class="mb-8 text-lg text-muted">
 			{m.home_subhead()}
 		</p>
-		<SignUpButton mode="modal">
-			<button class="rounded-full bg-accent px-8 py-3.5 text-base font-semibold hover:bg-accent-hover transition-colors">
-				{m.home_cta()}
-			</button>
-		</SignUpButton>
+		<Show when="signed-out">
+			<SignUpButton mode="modal">
+				<button class="rounded-full bg-accent px-8 py-3.5 text-base font-semibold hover:bg-accent-hover transition-colors">
+					{m.home_cta()}
+				</button>
+			</SignUpButton>
+		</Show>
+		<Show when="signed-in">
+			<a
+				href={localizeHref('/add')}
+				class="inline-block rounded-full bg-accent px-8 py-3.5 text-base font-semibold hover:bg-accent-hover transition-colors"
+			>
+				{m.nav_log_a_win()}
+			</a>
+		</Show>
 	</div>
 </section>
 
