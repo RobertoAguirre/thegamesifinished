@@ -9,10 +9,15 @@
 	let gameTitle = $state('');
 	let rawgId = $state<number | null>(null);
 	let gameImageUrl = $state<string | null>(null);
+	let isFighting = $state(false);
+	let character = $state('');
 	let submitting = $state(false);
 	let difficulty = $state('3');
 
 	const today = new Date().toISOString().split('T')[0];
+	const canSubmit = $derived(
+		Boolean(gameTitle.trim()) && (!isFighting || Boolean(character.trim()))
+	);
 </script>
 
 <section class="mx-auto max-w-xl">
@@ -37,10 +42,49 @@
 		}}
 		class="space-y-6"
 	>
-		<GameSearch bind:value={gameTitle} bind:rawgId bind:gameImageUrl rawgEnabled={data.rawgEnabled} />
+		<GameSearch
+			bind:value={gameTitle}
+			bind:rawgId
+			bind:gameImageUrl
+			bind:isFighting
+			rawgEnabled={data.rawgEnabled}
+		/>
 
 		<input type="hidden" name="rawgId" value={rawgId ?? ''} />
 		<input type="hidden" name="gameImageUrl" value={gameImageUrl ?? ''} />
+		<input type="hidden" name="isFighting" value={isFighting ? '1' : ''} />
+
+		{#if !rawgId}
+			<label class="flex cursor-pointer items-center gap-2 text-sm text-muted">
+				<input
+					type="checkbox"
+					checked={isFighting}
+					onchange={(e) => {
+						isFighting = e.currentTarget.checked;
+						if (!isFighting) character = '';
+					}}
+					class="size-4 accent-accent"
+				/>
+				<span>{m.add_fighting_toggle()}</span>
+			</label>
+		{/if}
+
+		{#if isFighting}
+			<div>
+				<label for="character" class="mb-2 block text-sm font-medium">{m.add_character()}</label>
+				<input
+					id="character"
+					name="character"
+					type="text"
+					required
+					bind:value={character}
+					placeholder={m.add_character_placeholder()}
+					maxlength="60"
+					class="w-full rounded-xl border border-border bg-surface px-4 py-3 outline-none focus:border-accent"
+				/>
+				<p class="mt-2 text-xs text-muted">{m.add_character_hint()}</p>
+			</div>
+		{/if}
 
 		<div class="grid gap-4 sm:grid-cols-2">
 			<div>
@@ -136,7 +180,7 @@
 
 		<button
 			type="submit"
-			disabled={submitting || !gameTitle.trim()}
+			disabled={submitting || !canSubmit}
 			class="w-full rounded-xl bg-accent py-3.5 font-semibold hover:bg-accent-hover disabled:opacity-50 transition-colors"
 		>
 			{submitting ? m.add_saving() : m.add_save()}

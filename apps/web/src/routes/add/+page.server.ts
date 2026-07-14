@@ -1,7 +1,8 @@
 import { fail, isRedirect, redirect } from '@sveltejs/kit';
+import { isFightingGenre } from '$lib/config/genres';
 import { m } from '$lib/paraglide/messages.js';
 import { createCompletion } from '$lib/server/completions';
-import { hasRawgApiKey } from '$lib/server/rawg';
+import { fetchGameGenres, hasRawgApiKey } from '$lib/server/rawg';
 import { getUserByClerkId } from '$lib/server/users';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -30,6 +31,8 @@ export const actions: Actions = {
 		const difficultyRaw = String(form.get('difficultyRating') ?? '3');
 		const rawgIdRaw = String(form.get('rawgId') ?? '');
 		const gameImageUrl = String(form.get('gameImageUrl') ?? '').trim() || undefined;
+		const character = String(form.get('character') ?? '').trim();
+		const fightingFlag = String(form.get('isFighting') ?? '') === '1';
 		const mediaFile = form.get('media') as File | null;
 
 		if (!gameTitle) {
@@ -57,15 +60,30 @@ export const actions: Actions = {
 		}
 
 		const rawgId = rawgIdRaw ? Number(rawgIdRaw) : undefined;
+		const resolvedRawgId = Number.isFinite(rawgId) ? rawgId : undefined;
+
+		let genres: string[] | undefined;
+		let fighting = fightingFlag;
+		if (resolvedRawgId != null) {
+			const rawgGenres = await fetchGameGenres(resolvedRawgId);
+			genres = rawgGenres.map((g) => g.name);
+			fighting = fighting || isFightingGenre(rawgGenres);
+		}
+
+		if (fighting && character.length < 1) {
+			return fail(400, { error: m.error_character_required() });
+		}
 
 		try {
 			const { completion, progress } = await createCompletion({
 				user,
 				gameTitle,
-				rawgId: Number.isFinite(rawgId) ? rawgId : undefined,
+				rawgId: resolvedRawgId,
 				gameImageUrl,
 				platforms,
 				platform: platform || undefined,
+				character: character || undefined,
+				genres,
 				hoursPlayed,
 				startedAt,
 				completedAt,

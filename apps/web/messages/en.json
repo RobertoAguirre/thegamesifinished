@@ -147,5 +147,12 @@
 	"rec_reason_similar": "Similar",
 	"rec_reason_genre": "Same genre",
 	"rec_reason_platform": "Same platform",
-	"rec_reason_community": "Popular with players like you"
+	"rec_reason_community": "Popular with players like you",
+	"add_fighting_toggle": "This is a fighting game",
+	"add_character": "Character you finished with",
+	"add_character_placeholder": "e.g. Ryu, Sol Badguy, Kazuya…",
+	"add_character_hint": "For fighters, the character is part of the log.",
+	"error_character_required": "Enter the character you finished the game with.",
+	"completion_character": "Character: {character}",
+	"card_character": "as {character}"
 }

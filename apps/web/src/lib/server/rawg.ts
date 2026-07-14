@@ -133,6 +133,52 @@ export async function fetchGameStoreLinks(rawgId: number): Promise<RawgStoreRow[
 	});
 }
 
+type GenreCacheEntry = { genres: Array<{ id?: number; name: string; slug?: string }>; expiresAt: number };
+const genresCache = new Map<number, GenreCacheEntry>();
+
+/** Game genres from RAWG detail (cached). */
+export async function fetchGameGenres(
+	rawgId: number
+): Promise<Array<{ id?: number; name: string; slug?: string }>> {
+	if (!hasRawgApiKey() || !Number.isFinite(rawgId)) return [];
+
+	const cached = genresCache.get(rawgId);
+	if (cached && Date.now() < cached.expiresAt) return cached.genres;
+
+	return withConcurrency(async () => {
+		requestCount += 1;
+		const params = new URLSearchParams({ key: env.RAWG_API_KEY!.trim() });
+		const controller = new AbortController();
+		const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+		try {
+			const response = await fetch(`${RAWG_BASE}/games/${rawgId}?${params}`, {
+				signal: controller.signal,
+				headers: { Accept: 'application/json' }
+			});
+			if (!response.ok) return [];
+
+			const data = (await response.json()) as {
+				genres?: Array<{ id?: number; name?: string; slug?: string }>;
+			};
+			const genres = (data.genres ?? [])
+				.map((g) => ({
+					id: g.id,
+					name: String(g.name ?? '').trim(),
+					slug: g.slug
+				}))
+				.filter((g) => g.name);
+
+			genresCache.set(rawgId, { genres, expiresAt: Date.now() + CACHE_TTL_MS });
+			return genres;
+		} catch {
+			return [];
+		} finally {
+			clearTimeout(timer);
+		}
+	});
+}
+
 async function requestSearch(normalized: string): Promise<RawgGame[]> {
 	const params = new URLSearchParams({
 		search: normalized,
@@ -154,12 +200,21 @@ async function requestSearch(normalized: string): Promise<RawgGame[]> {
 			return [];
 		}
 
-		const data = (await response.json()) as { results?: RawgGame[] };
+		const data = (await response.json()) as { results?: Array<RawgGame & {
+			genres?: Array<{ id?: number; name?: string; slug?: string }>;
+		}> };
 		const results = (data.results ?? []).map((game) => ({
 			id: game.id,
 			name: game.name,
 			background_image: game.background_image,
-			released: game.released
+			released: game.released,
+			genres: (game.genres ?? [])
+				.map((g) => ({
+					id: g.id,
+					name: String(g.name ?? '').trim(),
+					slug: g.slug
+				}))
+				.filter((g) => g.name)
 		}));
 
 		setCached(normalized, results);

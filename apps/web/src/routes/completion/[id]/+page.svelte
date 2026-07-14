@@ -131,6 +131,12 @@
 				</p>
 			{/if}
 
+			{#if data.completion.character}
+				<p class="mt-2 text-sm text-muted">
+					{m.completion_character({ character: data.completion.character })}
+				</p>
+			{/if}
+
 			{#if data.completion.notes}
 				<p class="mt-4 text-white/85">{data.completion.notes}</p>
 			{/if}

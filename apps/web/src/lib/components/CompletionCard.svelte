@@ -15,6 +15,7 @@
 			storeUrl?: string;
 			storeLinks?: StoreLink[];
 			platforms?: string[];
+			character?: string;
 			completedAt: string;
 			notes?: string;
 			mediaKey?: string;
@@ -73,6 +74,10 @@
 
 			{#if completion.platforms?.length}
 				<p class="mt-2 text-xs text-muted">{completion.platforms.join(' · ')}</p>
+			{/if}
+
+			{#if completion.character}
+				<p class="mt-1 text-xs text-muted">{m.card_character({ character: completion.character })}</p>
 			{/if}
 
 			{#if completion.notes}

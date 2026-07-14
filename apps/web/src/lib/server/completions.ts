@@ -18,6 +18,8 @@ export interface CreateCompletionInput {
 	/** @deprecated Prefer `platforms`. */
 	platform?: string;
 	platforms?: string[];
+	character?: string;
+	genres?: string[];
 	hoursPlayed?: number;
 	startedAt?: Date;
 	completedAt: Date;
@@ -79,6 +81,8 @@ export async function createCompletion(
 		platforms: platforms.length ? platforms : undefined,
 		// Keep legacy single field in sync for older readers.
 		platform: platforms[0],
+		character: input.character?.trim() || undefined,
+		genres: input.genres?.length ? input.genres : undefined,
 		hoursPlayed: input.hoursPlayed,
 		startedAt: input.startedAt,
 		completedAt: input.completedAt,
@@ -221,6 +225,8 @@ export function serializeCompletion(completion: Completion) {
 		storeLinks: completion.storeLinks,
 		platform: platforms[0],
 		platforms,
+		character: completion.character,
+		genres: completion.genres,
 		hoursPlayed: completion.hoursPlayed,
 		startedAt: completion.startedAt?.toISOString(),
 		completedAt: completion.completedAt.toISOString(),

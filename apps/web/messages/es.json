@@ -147,5 +147,12 @@
 	"rec_reason_similar": "Similar",
 	"rec_reason_genre": "Mismo género",
 	"rec_reason_platform": "Misma plataforma",
-	"rec_reason_community": "Popular entre jugadores como tú"
+	"rec_reason_community": "Popular entre jugadores como tú",
+	"add_fighting_toggle": "Es un juego de pelea",
+	"add_character": "Personaje con el que lo terminaste",
+	"add_character_placeholder": "Ej. Ryu, Sol Badguy, Kazuya…",
+	"add_character_hint": "En pelea, el personaje es parte del registro.",
+	"error_character_required": "Indica el personaje con el que terminaste el juego.",
+	"completion_character": "Personaje: {character}",
+	"card_character": "con {character}"
 }

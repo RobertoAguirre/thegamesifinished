@@ -1,10 +1,12 @@
 <script lang="ts">
+	import { isFightingGenre } from '$lib/config/genres';
 	import { m } from '$lib/paraglide/messages.js';
 
 	interface GameResult {
 		id: number;
 		name: string;
 		background_image?: string;
+		genres?: Array<{ id?: number; name: string; slug?: string }>;
 	}
 
 	interface Props {
@@ -12,8 +14,14 @@
 		value?: string;
 		rawgId?: number | null;
 		gameImageUrl?: string | null;
+		isFighting?: boolean;
 		rawgEnabled?: boolean;
-		onselect?: (game: { title: string; rawgId?: number; gameImageUrl?: string }) => void;
+		onselect?: (game: {
+			title: string;
+			rawgId?: number;
+			gameImageUrl?: string;
+			isFighting: boolean;
+		}) => void;
 	}
 
 	let {
@@ -21,6 +29,7 @@
 		value = $bindable(''),
 		rawgId = $bindable(null),
 		gameImageUrl = $bindable(null),
+		isFighting = $bindable(false),
 		rawgEnabled = true,
 		onselect
 	}: Props = $props();
@@ -68,10 +77,10 @@
 		query = target.value;
 
 		if (searchMode) {
-			// Keep form title empty until a result is picked (or manual mode).
 			value = '';
 			rawgId = null;
 			gameImageUrl = null;
+			isFighting = false;
 		} else {
 			value = target.value;
 			rawgId = null;
@@ -88,20 +97,26 @@
 		value = game.name;
 		rawgId = game.id;
 		gameImageUrl = game.background_image ?? null;
+		isFighting = isFightingGenre(game.genres);
 		query = game.name;
 		results = [];
-		onselect?.({ title: game.name, rawgId: game.id, gameImageUrl: game.background_image });
+		onselect?.({
+			title: game.name,
+			rawgId: game.id,
+			gameImageUrl: game.background_image,
+			isFighting
+		});
 	}
 
 	function useManual() {
 		manualMode = true;
 		results = [];
 		value = query;
+		isFighting = false;
 	}
 
 	function onKeydown(event: KeyboardEvent) {
 		if (event.key !== 'Enter') return;
-		// Never let Enter submit the parent form from this field.
 		event.preventDefault();
 		if (searchMode && results.length > 0) {
 			selectGame(results[0]);

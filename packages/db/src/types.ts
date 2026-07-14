@@ -56,6 +56,10 @@ export interface Completion {
 	platform?: string;
 	/** Hardware platforms where this game was finished (Xbox, PS5, PC, … — not stores). */
 	platforms?: string[];
+	/** Character used to finish (required for fighting games). */
+	character?: string;
+	/** Genres snapshot (e.g. Fighting) for display / rules. */
+	genres?: string[];
 	hoursPlayed?: number;
 	startedAt?: Date;
 	/** Alias of finished moment — kept as completedAt for compatibility */
@@ -110,4 +114,5 @@ export interface RawgGame {
 	name: string;
 	background_image?: string;
 	released?: string;
+	genres?: Array<{ id?: number; name: string; slug?: string }>;
 }
