@@ -1,110 +1,131 @@
+import { createHash, randomUUID } from 'node:crypto';
+import { accessSync, constants, existsSync, mkdirSync, unlinkSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { env } from '$env/dynamic/private';
-import { createReadStream, existsSync, mkdirSync } from 'node:fs';
-import { stat, unlink } from 'node:fs/promises';
-import { extname, join, resolve } from 'node:path';
-import { randomUUID } from 'node:crypto';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+const ALLOWED_IMAGE = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const ALLOWED_VIDEO = new Set(['video/mp4', 'video/webm']);
 
-const MIME_EXTENSIONS: Record<string, string> = {
-	'image/jpeg': '.jpg',
-	'image/png': '.png',
-	'image/webp': '.webp',
-	'image/gif': '.gif',
-	'video/mp4': '.mp4',
-	'video/webm': '.webm',
-	'video/quicktime': '.mov'
-};
-
-export function getUploadDir(): string {
-	const dir = env.UPLOAD_DIR ?? './uploads';
-	return resolve(dir);
+function preferredUploadDir(): string {
+	return env.UPLOAD_DIR?.trim() || resolve('uploads');
 }
 
-export function ensureUploadDir(): string {
-	const dir = getUploadDir();
-	if (!existsSync(dir)) {
-		mkdirSync(dir, { recursive: true });
+function tryEnsureWritable(dir: string): boolean {
+	try {
+		if (!existsSync(dir)) {
+			mkdirSync(dir, { recursive: true, mode: 0o755 });
+		}
+		accessSync(dir, constants.W_OK);
+		const probe = join(dir, `.write-probe-${process.pid}`);
+		writeFileSync(probe, 'ok');
+		unlinkSync(probe);
+		return true;
+	} catch {
+		return false;
 	}
-	return dir;
+}
+
+/** Resolved once per process after first successful probe. */
+let cachedUploadDir: string | null = null;
+
+/**
+ * Ensures a writable upload directory.
+ * Falls back if UPLOAD_DIR (e.g. /var/data/uploads) is not writable —
+ * common when Render disk is missing or mis-mounted.
+ */
+export function ensureUploadDir(): string {
+	if (cachedUploadDir && tryEnsureWritable(cachedUploadDir)) {
+		return cachedUploadDir;
+	}
+
+	const candidates = [
+		preferredUploadDir(),
+		resolve('uploads'),
+		'/tmp/tgif-uploads'
+	].filter((dir, index, all) => all.indexOf(dir) === index);
+
+	for (const dir of candidates) {
+		if (tryEnsureWritable(dir)) {
+			if (dir !== preferredUploadDir()) {
+				console.error(
+					`[media] UPLOAD_DIR not writable (${preferredUploadDir()}). Using fallback: ${dir}`
+				);
+			}
+			cachedUploadDir = dir;
+			return dir;
+		}
+	}
+
+	throw new Error(
+		`No se pudo escribir en el directorio de uploads (${preferredUploadDir()}). ` +
+			'En Render: monta un Persistent Disk en /var/data y define UPLOAD_DIR=/var/data/uploads.'
+	);
+}
+
+/** Health / diagnostics: can we write files? */
+export function getUploadDirStatus(): { ok: boolean; path: string; message: string } {
+	const preferred = preferredUploadDir();
+	try {
+		const path = ensureUploadDir();
+		const usingFallback = path !== preferred;
+		return {
+			ok: true,
+			path,
+			message: usingFallback
+				? `writable (fallback; preferred ${preferred} failed)`
+				: 'writable'
+		};
+	} catch (error) {
+		return {
+			ok: false,
+			path: preferred,
+			message: error instanceof Error ? error.message : 'not writable'
+		};
+	}
 }
 
 export async function saveMedia(
 	file: File
-): Promise<{ mediaKey: string; mediaType: 'image' | 'video' }> {
-	const isVideo = file.type.startsWith('video/');
-	const isImage = file.type.startsWith('image/');
+): Promise<{ mediaKey: string; mediaType: 'image' | 'video'; sha256: string }> {
+	const type = file.type;
+	const isImage = ALLOWED_IMAGE.has(type);
+	const isVideo = ALLOWED_VIDEO.has(type);
 
-	if (!isVideo && !isImage) {
-		throw new Error('Only images and videos are allowed');
+	if (!isImage && !isVideo) {
+		throw new Error('Unsupported media type. Use JPEG, PNG, WebP, GIF, MP4, or WebM.');
 	}
 
-	const maxSize = isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
-	if (file.size > maxSize) {
-		throw new Error(`File too large. Max ${isVideo ? '25MB' : '10MB'}.`);
+	const max = isImage ? MAX_IMAGE_BYTES : MAX_VIDEO_BYTES;
+	if (file.size > max) {
+		throw new Error(`File too large. Max ${isImage ? '10MB' : '50MB'}.`);
 	}
 
-	const extension =
-		MIME_EXTENSIONS[file.type] ?? extname(file.name).toLowerCase() ?? (isVideo ? '.mp4' : '.jpg');
-
-	const mediaKey = `${randomUUID()}${extension}`;
-	const filePath = join(ensureUploadDir(), mediaKey);
 	const buffer = Buffer.from(await file.arrayBuffer());
-	await import('node:fs/promises').then((fs) => fs.writeFile(filePath, buffer));
+	const sha256 = createHash('sha256').update(buffer).digest('hex');
+	const ext = type.split('/')[1] === 'jpeg' ? 'jpg' : type.split('/')[1];
+	const mediaKey = `${randomUUID()}.${ext}`;
 
-	return { mediaKey, mediaType: isVideo ? 'video' : 'image' };
-}
-
-export function getMediaPath(mediaKey: string): string | null {
-	const safeKey = mediaKey.replace(/[/\\]/g, '');
-	const filePath = join(getUploadDir(), safeKey);
-	return existsSync(filePath) ? filePath : null;
-}
-
-export async function getMediaInfo(mediaKey: string) {
-	const filePath = getMediaPath(mediaKey);
-	if (!filePath) return null;
-
-	const fileStat = await stat(filePath);
-	const ext = extname(filePath).toLowerCase();
-	const videoExtensions = new Set(['.mp4', '.webm', '.mov']);
+	const dir = ensureUploadDir();
+	writeFileSync(join(dir, mediaKey), buffer);
 
 	return {
-		filePath,
-		size: fileStat.size,
-		mediaType: videoExtensions.has(ext) ? ('video' as const) : ('image' as const)
+		mediaKey,
+		mediaType: isImage ? 'image' : 'video',
+		sha256
 	};
 }
 
-export function openMediaStream(mediaKey: string) {
-	const filePath = getMediaPath(mediaKey);
-	if (!filePath) return null;
-	return createReadStream(filePath);
+export function resolveMediaPath(mediaKey: string): string {
+	return join(ensureUploadDir(), mediaKey);
 }
 
-export function mediaContentType(mediaKey: string): string {
-	const ext = extname(mediaKey).toLowerCase();
-	const map: Record<string, string> = {
-		'.jpg': 'image/jpeg',
-		'.jpeg': 'image/jpeg',
-		'.png': 'image/png',
-		'.webp': 'image/webp',
-		'.gif': 'image/gif',
-		'.mp4': 'video/mp4',
-		'.webm': 'video/webm',
-		'.mov': 'video/quicktime'
-	};
-	return map[ext] ?? 'application/octet-stream';
-}
-
-export async function deleteMediaFile(mediaKey: string | undefined): Promise<void> {
+export function deleteMediaFile(mediaKey: string | undefined): void {
 	if (!mediaKey) return;
-	const filePath = getMediaPath(mediaKey);
-	if (!filePath) return;
 	try {
-		await unlink(filePath);
+		unlinkSync(resolveMediaPath(mediaKey));
 	} catch {
-		// Best-effort cleanup; missing files are fine.
+		// Missing file is fine — best effort cleanup.
 	}
 }

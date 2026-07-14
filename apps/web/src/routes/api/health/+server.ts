@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { env as privateEnv } from '$env/dynamic/private';
 import { env as publicEnv } from '$env/dynamic/public';
 import { getDb } from '$lib/server/db';
+import { getUploadDirStatus } from '$lib/server/media';
 import { getSiteOrigin } from '$lib/server/origin';
 import { getRawgStats, verifyRawgConnection } from '$lib/server/rawg';
 import type { RequestHandler } from './$types';
@@ -28,9 +29,10 @@ export const GET: RequestHandler = async ({ url }) => {
 		message: 'Clerk keys configured'
 	};
 
+	const uploadStatus = getUploadDirStatus();
 	checks.uploads = {
-		ok: Boolean(privateEnv.UPLOAD_DIR),
-		message: privateEnv.UPLOAD_DIR ?? 'UPLOAD_DIR not set'
+		ok: uploadStatus.ok,
+		message: `${uploadStatus.path} — ${uploadStatus.message}`
 	};
 
 	checks.origin = {
