@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { isFightingGenre } from '$lib/config/genres';
 	import { m } from '$lib/paraglide/messages.js';
+	import { rawgImageSrc } from '$lib/rawgImage';
 
 	interface GameResult {
 		id: number;
@@ -166,7 +167,12 @@
 							class="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-hover"
 						>
 							{#if game.background_image}
-								<img src={game.background_image} alt="" class="h-10 w-10 rounded-lg object-cover" />
+								<img
+									src={rawgImageSrc(game.background_image, { width: 120, height: 120 })}
+									alt=""
+									class="h-10 w-10 rounded-lg object-cover"
+									loading="lazy"
+								/>
 							{/if}
 							<span>{game.name}</span>
 						</button>

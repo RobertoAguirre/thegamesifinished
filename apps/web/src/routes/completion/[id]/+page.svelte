@@ -8,6 +8,7 @@
 	import { AnalyticsEvents } from '$lib/analytics/events';
 	import { GAME_PLATFORMS } from '$lib/config/platforms';
 	import { m } from '$lib/paraglide/messages.js';
+	import { rawgImageSrc } from '$lib/rawgImage';
 	import { formatDate, shareText } from '$lib/utils';
 	import { enhance } from '$app/forms';
 	import { onMount } from 'svelte';
@@ -109,7 +110,7 @@
 			</div>
 		{:else if data.completion.gameImageUrl}
 			<img
-				src={data.completion.gameImageUrl}
+				src={rawgImageSrc(data.completion.gameImageUrl) ?? data.completion.gameImageUrl}
 				alt={data.completion.gameTitle}
 				class="aspect-video w-full object-cover"
 			/>

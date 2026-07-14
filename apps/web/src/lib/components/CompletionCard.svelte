@@ -2,6 +2,7 @@
 	import AffiliateButton from '$lib/components/AffiliateButton.svelte';
 	import { enhance } from '$app/forms';
 	import { m } from '$lib/paraglide/messages.js';
+	import { rawgImageSrc } from '$lib/rawgImage';
 	import { formatDate } from '$lib/utils';
 	import type { StoreLink } from '@tgif/db';
 
@@ -52,9 +53,10 @@
 		{:else if completion.gameImageUrl}
 			<div class="aspect-video overflow-hidden bg-black/40">
 				<img
-					src={completion.gameImageUrl}
+					src={rawgImageSrc(completion.gameImageUrl) ?? completion.gameImageUrl}
 					alt={completion.gameTitle}
 					class="h-full w-full object-cover"
+					loading="lazy"
 				/>
 			</div>
 		{/if}

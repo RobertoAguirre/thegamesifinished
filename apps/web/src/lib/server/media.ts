@@ -1,6 +1,14 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { accessSync, constants, existsSync, mkdirSync, unlinkSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import {
+	accessSync,
+	constants,
+	createReadStream,
+	existsSync,
+	mkdirSync,
+	unlinkSync,
+	writeFileSync
+} from 'node:fs';
+import { extname, join, resolve } from 'node:path';
 import { env } from '$env/dynamic/private';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
@@ -121,10 +129,39 @@ export function resolveMediaPath(mediaKey: string): string {
 	return join(ensureUploadDir(), mediaKey);
 }
 
+export function getMediaPath(mediaKey: string): string | null {
+	const safeKey = mediaKey.replace(/[/\\]/g, '');
+	const filePath = join(ensureUploadDir(), safeKey);
+	return existsSync(filePath) ? filePath : null;
+}
+
+export function openMediaStream(mediaKey: string) {
+	const filePath = getMediaPath(mediaKey);
+	if (!filePath) return null;
+	return createReadStream(filePath);
+}
+
+export function mediaContentType(mediaKey: string): string {
+	const ext = extname(mediaKey).toLowerCase();
+	const map: Record<string, string> = {
+		'.jpg': 'image/jpeg',
+		'.jpeg': 'image/jpeg',
+		'.png': 'image/png',
+		'.webp': 'image/webp',
+		'.gif': 'image/gif',
+		'.mp4': 'video/mp4',
+		'.webm': 'video/webm',
+		'.mov': 'video/quicktime'
+	};
+	return map[ext] ?? 'application/octet-stream';
+}
+
 export function deleteMediaFile(mediaKey: string | undefined): void {
 	if (!mediaKey) return;
 	try {
-		unlinkSync(resolveMediaPath(mediaKey));
+		const filePath = getMediaPath(mediaKey);
+		if (!filePath) return;
+		unlinkSync(filePath);
 	} catch {
 		// Missing file is fine — best effort cleanup.
 	}

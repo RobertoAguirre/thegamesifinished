@@ -109,7 +109,7 @@ async function fetchByGenres(genreIds: number[], excludeId: number): Promise<Raw
 }
 
 function toRecommended(
-	games: Pick<RawgGame, 'id' | 'name' | 'background_image' | 'released'>,
+	game: Pick<RawgGame, 'id' | 'name' | 'background_image' | 'released'>,
 	reason: RecommendationReason
 ): RecommendedGame {
 	return {

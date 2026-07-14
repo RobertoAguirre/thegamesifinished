@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages.js';
+	import { rawgImageSrc } from '$lib/rawgImage';
 
 	interface Rec {
 		id: number;
@@ -42,9 +43,10 @@
 					>
 						{#if game.backgroundImage}
 							<img
-								src={game.backgroundImage}
+								src={rawgImageSrc(game.backgroundImage, { width: 160, height: 160 })}
 								alt=""
 								class="h-16 w-16 shrink-0 rounded-lg object-cover"
+								loading="lazy"
 							/>
 						{:else}
 							<div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-accent/15 text-xl">
