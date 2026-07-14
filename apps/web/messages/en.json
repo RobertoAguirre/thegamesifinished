@@ -96,7 +96,7 @@
 	"share_caption_only": "Caption copied. Create the post in Instagram/TikTok and paste it.",
 	"share_failed": "Couldn't prepare the share. Try copying the link.",
 	"share_quick": "Share now (pick your app)",
-	"share_hint": "WhatsApp, Facebook and X open directly. \"Share now\" lets you pick any app, including WhatsApp Status. Instagram and TikTok: on phone pick the image for Feed or Stories; on desktop we download the image and copy the caption to paste.",
+	"share_hint": "\"Share now\" opens your phone's share sheet — pick WhatsApp, Instagram, TikTok, or any app, with the card and image ready.",
 	"share_text": "{displayName} just finished {gameTitle} — see the proof on The Games I Finished",
 	"og_finished_title": "{displayName} finished {gameTitle}",
 	"og_just_finished_title": "{displayName} just finished {gameTitle}",
