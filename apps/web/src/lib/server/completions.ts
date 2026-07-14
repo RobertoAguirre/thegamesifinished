@@ -7,6 +7,7 @@ import { getDb } from './db';
 import { resolveGameStoreData } from './games';
 import { deleteMediaFile, saveMedia } from './media';
 import { generateOgCard } from './og';
+import { deleteReactionsForCompletion } from './reactions';
 import { getCommunityDifficultyTier, xpForTier } from './progression/difficulty';
 import { evaluateBadgesForUser, type ProgressResult } from './progression/badges';
 
@@ -143,6 +144,7 @@ export async function deleteCompletion(id: string, clerkId: string): Promise<boo
 	if (!completion || completion.clerkId !== clerkId) return false;
 
 	const db = await getDb();
+	await deleteReactionsForCompletion(completion._id);
 	await db.collection('completions').deleteOne({ _id: completion._id });
 	await db.collection('comments').deleteMany({ completionId: completion._id });
 

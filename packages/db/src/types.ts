@@ -80,6 +80,19 @@ export interface Comment {
 	createdAt: Date;
 }
 
+export type ReactionTargetType = 'completion' | 'comment';
+export type ReactionKind = 'fire' | 'heart' | 'clap' | 'joy';
+
+export interface Reaction {
+	_id: ObjectId;
+	targetType: ReactionTargetType;
+	targetId: ObjectId;
+	clerkId: string;
+	userId: ObjectId;
+	kind: ReactionKind;
+	createdAt: Date;
+}
+
 export interface Badge {
 	_id: ObjectId;
 	slug: string;

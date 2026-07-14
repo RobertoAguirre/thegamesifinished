@@ -2,6 +2,7 @@
 	import { isFightingGenre } from '$lib/config/genres';
 	import { m } from '$lib/paraglide/messages.js';
 	import { rawgImageSrc } from '$lib/rawgImage';
+	import Spinner from '$lib/components/Spinner.svelte';
 
 	interface GameResult {
 		id: number;
@@ -148,11 +149,19 @@
 			oninput={onInput}
 			onkeydown={onKeydown}
 			autocomplete="off"
-			class="w-full rounded-xl border border-border bg-surface px-4 py-3 outline-none focus:border-accent"
+			class="w-full rounded-xl border border-border bg-surface px-4 py-3 outline-none focus:border-accent {loading
+				? 'pr-28'
+				: ''}"
 		/>
 
 		{#if loading}
-			<span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">{m.game_searching()}</span>
+			<span
+				class="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2 text-xs text-muted"
+				aria-live="polite"
+			>
+				<Spinner class="text-accent" />
+				<span>{m.game_searching()}</span>
+			</span>
 		{/if}
 
 		{#if results.length > 0}

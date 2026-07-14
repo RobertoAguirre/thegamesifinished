@@ -1,5 +1,6 @@
 <script lang="ts">
 	import GameSearch from '$lib/components/GameSearch.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
 	import { GAME_PLATFORMS } from '$lib/config/platforms';
 	import { m } from '$lib/paraglide/messages.js';
 	import { enhance } from '$app/forms';
@@ -33,15 +34,17 @@
 	<form
 		method="POST"
 		enctype="multipart/form-data"
+		aria-busy={submitting}
 		use:enhance={() => {
 			submitting = true;
-			return async ({ update }) => {
-				submitting = false;
+			return async ({ result, update }) => {
 				await update();
+				if (result.type !== 'redirect') submitting = false;
 			};
 		}}
-		class="space-y-6"
+		class="relative space-y-6"
 	>
+		<div class="space-y-6 {submitting ? 'pointer-events-none opacity-70' : ''}">
 		<GameSearch
 			bind:value={gameTitle}
 			bind:rawgId
@@ -177,12 +180,16 @@
 				class="w-full rounded-xl border border-border bg-surface px-4 py-3 outline-none focus:border-accent"
 			></textarea>
 		</div>
+		</div>
 
 		<button
 			type="submit"
 			disabled={submitting || !canSubmit}
-			class="w-full rounded-xl bg-accent py-3.5 font-semibold hover:bg-accent-hover disabled:opacity-50 transition-colors"
+			class="flex w-full items-center justify-center gap-2 rounded-xl bg-accent py-3.5 font-semibold hover:bg-accent-hover disabled:opacity-50 transition-colors"
 		>
+			{#if submitting}
+				<Spinner />
+			{/if}
 			{submitting ? m.add_saving() : m.add_save()}
 		</button>
 	</form>

@@ -6,7 +6,7 @@
 	import { m } from '$lib/paraglide/messages.js';
 	import { locales, localizeHref } from '$lib/paraglide/runtime.js';
 	import { ClerkProvider } from 'svelte-clerk';
-	import { page } from '$app/state';
+	import { navigating, page } from '$app/state';
 	import { onMount } from 'svelte';
 
 	let { children, data } = $props();
@@ -47,6 +47,14 @@
 		}
 	}}
 >
+	{#if navigating.to}
+		<div
+			class="pointer-events-none fixed inset-x-0 top-0 z-[100] h-1 overflow-hidden bg-accent/20"
+			aria-hidden="true"
+		>
+			<div class="nav-progress-bar h-full w-1/3 rounded-full bg-accent"></div>
+		</div>
+	{/if}
 	<div class="flex min-h-screen flex-col">
 		<Header />
 		<main class="mx-auto w-full max-w-5xl flex-1 px-4 py-10">

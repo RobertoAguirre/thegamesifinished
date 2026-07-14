@@ -6,6 +6,7 @@ export const AnalyticsEvents = {
 	commentPosted: 'comment_posted',
 	badgeUnlocked: 'badge_unlocked',
 	rankUnlocked: 'rank_unlocked',
+	reactionPosted: 'reaction_posted',
 	affiliateClick: 'affiliate_click'
 } as const;
 

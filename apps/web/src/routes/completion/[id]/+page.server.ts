@@ -11,6 +11,11 @@ import {
 } from '$lib/server/comments';
 import { m } from '$lib/paraglide/messages.js';
 import { getSiteOrigin } from '$lib/server/origin';
+import {
+	emptyReactionCounts,
+	getReactionsForTargets,
+	toggleReaction
+} from '$lib/server/reactions';
 import { getRecommendationsForCompletion } from '$lib/server/recommendations';
 import { getUserByClerkId } from '$lib/server/users';
 import { ensureBadgesSeeded, listActiveBadges } from '$lib/server/progression/badges';
@@ -39,6 +44,15 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 		platforms: completion.platforms,
 		limit: 4
 	});
+
+	const reactionTargets = [
+		{ targetType: 'completion' as const, targetId: serialized.id },
+		...comments.map((c) => ({
+			targetType: 'comment' as const,
+			targetId: c._id.toString()
+		}))
+	];
+	const reactions = await getReactionsForTargets(reactionTargets, userId);
 
 	let celebration: {
 		badges: Array<{ slug: string; name: string; description: string; iconEmoji: string }>;
@@ -70,7 +84,19 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 
 	return {
 		completion: serialized,
-		comments: comments.map(serializeComment),
+		comments: comments.map((comment) => {
+			const id = comment._id.toString();
+			return {
+				...serializeComment(comment),
+				reactions: reactions.counts[id] ?? emptyReactionCounts(),
+				viewerReaction: reactions.viewer[id] ?? null
+			};
+		}),
+		completionReactions: {
+			counts: reactions.counts[serialized.id] ?? emptyReactionCounts(),
+			viewerReaction: reactions.viewer[serialized.id] ?? null
+		},
+		canReact: Boolean(userId),
 		recommendations,
 		siteOrigin,
 		canonicalUrl: `${siteOrigin}/completion/${serialized.id}`,
@@ -111,6 +137,31 @@ export const actions: Actions = {
 		}
 
 		return { commentSuccess: true, authorName: '', body: '' };
+	},
+
+	react: async ({ request, locals }) => {
+		const { userId } = locals.auth();
+		if (!userId) return fail(401, { reactionError: m.error_signed_in() });
+
+		const form = await request.formData();
+		const targetId = String(form.get('targetId') ?? '');
+		const result = await toggleReaction({
+			targetType: String(form.get('targetType') ?? ''),
+			targetId,
+			kind: String(form.get('kind') ?? ''),
+			clerkId: userId
+		});
+
+		if (!result.ok) {
+			return fail(400, { reactionError: result.error });
+		}
+
+		return {
+			reactionSuccess: true,
+			reactionTargetId: targetId,
+			reactionCounts: result.counts,
+			viewerReaction: result.viewerReaction
+		};
 	},
 
 	addPlatforms: async ({ request, params, locals }) => {

@@ -2,8 +2,10 @@
 	import AdSlot from '$lib/components/AdSlot.svelte';
 	import AffiliateButton from '$lib/components/AffiliateButton.svelte';
 	import CelebrationModal from '$lib/components/CelebrationModal.svelte';
+	import ReactionBar from '$lib/components/ReactionBar.svelte';
 	import Recommendations from '$lib/components/Recommendations.svelte';
 	import ShareButtons from '$lib/components/ShareButtons.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
 	import { track, trackCompletionPageview } from '$lib/analytics/client';
 	import { AnalyticsEvents } from '$lib/analytics/events';
 	import { GAME_PLATFORMS } from '$lib/config/platforms';
@@ -150,6 +152,19 @@
 					storeUrl={data.completion.storeUrl}
 				/>
 			</div>
+
+			<div class="mt-5">
+				{#if form?.reactionError}
+					<p class="mb-3 text-sm text-red-300">{form.reactionError}</p>
+				{/if}
+				<ReactionBar
+					targetType="completion"
+					targetId={data.completion.id}
+					counts={data.completionReactions.counts}
+					viewerReaction={data.completionReactions.viewerReaction}
+					canReact={data.canReact}
+				/>
+			</div>
 		</div>
 	</div>
 
@@ -194,8 +209,11 @@
 				<button
 					type="submit"
 					disabled={addingPlatforms}
-					class="rounded-full bg-accent px-5 py-2.5 text-sm font-medium hover:bg-accent-hover disabled:opacity-50 transition-colors"
+					class="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-medium hover:bg-accent-hover disabled:opacity-50 transition-colors"
 				>
+					{#if addingPlatforms}
+						<Spinner />
+					{/if}
 					{addingPlatforms ? m.completion_adding_platforms() : m.completion_add_platforms_btn()}
 				</button>
 			</form>
@@ -268,8 +286,11 @@
 			<button
 				type="submit"
 				disabled={submitting}
-				class="rounded-full bg-accent px-5 py-2.5 text-sm font-medium hover:bg-accent-hover disabled:opacity-50 transition-colors"
+				class="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-medium hover:bg-accent-hover disabled:opacity-50 transition-colors"
 			>
+				{#if submitting}
+					<Spinner />
+				{/if}
 				{submitting ? m.completion_posting() : m.completion_post_comment()}
 			</button>
 		</form>
@@ -285,6 +306,15 @@
 							<span class="text-xs text-muted">{timeAgo(comment.createdAt)}</span>
 						</div>
 						<p class="text-sm text-white/85 whitespace-pre-wrap">{comment.body}</p>
+						<div class="mt-3">
+							<ReactionBar
+								targetType="comment"
+								targetId={comment.id}
+								counts={comment.reactions}
+								viewerReaction={comment.viewerReaction}
+								canReact={data.canReact}
+							/>
+						</div>
 					</li>
 				{/each}
 			</ul>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import AffiliateButton from '$lib/components/AffiliateButton.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
 	import { enhance } from '$app/forms';
 	import { m } from '$lib/paraglide/messages.js';
 	import { rawgImageSrc } from '$lib/rawgImage';
@@ -120,8 +121,11 @@
 				<button
 					type="submit"
 					disabled={deleting}
-					class="text-red-400/80 hover:text-red-300 disabled:opacity-50 transition-colors"
+					class="inline-flex items-center gap-1.5 text-red-400/80 hover:text-red-300 disabled:opacity-50 transition-colors"
 				>
+					{#if deleting}
+						<Spinner class="text-red-400" />
+					{/if}
 					{deleting ? m.deleting() : m.delete()}
 				</button>
 			</form>
