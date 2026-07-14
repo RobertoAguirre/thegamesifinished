@@ -228,6 +228,11 @@
 			completionPath="/completion/{data.completion.id}"
 			origin={data.siteOrigin}
 			completionId={data.completion.id}
+			imageUrl={data.ogImage ??
+				(data.completion.mediaKey
+					? `${data.siteOrigin}/api/media/${data.completion.mediaKey}`
+					: rawgImageSrc(data.completion.gameImageUrl, { width: 1280 }) ??
+						data.completion.gameImageUrl)}
 		/>
 	</section>
 
