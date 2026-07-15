@@ -182,6 +182,7 @@ export async function deleteCompletion(id: string, clerkId: string): Promise<boo
 	await deleteReactionsForCompletion(completion._id);
 	await db.collection('completions').deleteOne({ _id: completion._id });
 	await db.collection('comments').deleteMany({ completionId: completion._id });
+	await db.collection('notifications').deleteMany({ completionId: completion._id });
 
 	await deleteMediaFile(completion.mediaKey);
 	await deleteMediaFile(completion.ogImageKey);

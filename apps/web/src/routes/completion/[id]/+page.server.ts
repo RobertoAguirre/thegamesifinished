@@ -11,10 +11,13 @@ import {
 	serializeComment
 } from '$lib/server/comments';
 import { m } from '$lib/paraglide/messages.js';
+import { getClerkEmail, sendCommentEmail } from '$lib/server/email';
+import { createNotification } from '$lib/server/notifications';
 import { getSiteOrigin } from '$lib/server/origin';
 import {
 	emptyReactionCounts,
 	getReactionsForTargets,
+	REACTION_EMOJI,
 	toggleReaction
 } from '$lib/server/reactions';
 import { getRecommendationsForCompletion } from '$lib/server/recommendations';
@@ -113,7 +116,7 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 };
 
 export const actions: Actions = {
-	comment: async ({ request, params, getClientAddress, locals }) => {
+	comment: async ({ request, params, getClientAddress, locals, url }) => {
 		const completion = await getCompletionById(params.id);
 		if (!completion) {
 			return fail(404, { commentError: m.error_comment_not_found(), authorName: '', body: '' });
@@ -141,24 +144,78 @@ export const actions: Actions = {
 			});
 		}
 
+		// Avisa al dueño (campana + correo) sin bloquear la respuesta; nunca a sí mismo.
+		const isOwnComment = Boolean(userId && completion.clerkId === userId);
+		if (!isOwnComment) {
+			const siteOrigin = getSiteOrigin(url);
+			const completionUrl = `${siteOrigin}/completion/${completion._id.toString()}`;
+			void (async () => {
+				try {
+					await createNotification({
+						userId: completion.userId,
+						type: 'comment',
+						completionId: completion._id,
+						gameTitle: completion.gameTitle,
+						actorName: result.comment.authorName,
+						preview: result.comment.body.slice(0, 120)
+					});
+					const toEmail = await getClerkEmail(completion.clerkId);
+					if (toEmail) {
+						await sendCommentEmail({
+							toEmail,
+							ownerName: completion.displayName,
+							actorName: result.comment.authorName,
+							gameTitle: completion.gameTitle,
+							commentBody: result.comment.body,
+							completionUrl
+						});
+					}
+				} catch (error) {
+					console.warn('Comment notification failed:', error);
+				}
+			})();
+		}
+
 		return { commentSuccess: true, authorName: '', body: '' };
 	},
 
-	react: async ({ request, locals }) => {
+	react: async ({ request, params, locals }) => {
 		const { userId } = locals.auth();
 		if (!userId) return fail(401, { reactionError: m.error_signed_in() });
 
 		const form = await request.formData();
 		const targetId = String(form.get('targetId') ?? '');
+		const targetType = String(form.get('targetType') ?? '');
+		const kind = String(form.get('kind') ?? '');
 		const result = await toggleReaction({
-			targetType: String(form.get('targetType') ?? ''),
+			targetType,
 			targetId,
-			kind: String(form.get('kind') ?? ''),
+			kind,
 			clerkId: userId
 		});
 
 		if (!result.ok) {
 			return fail(400, { reactionError: result.error });
+		}
+
+		// Campana para el dueño solo en reacciones nuevas a su victoria (no comentarios ni al quitar).
+		if (result.action === 'added' && targetType === 'completion') {
+			void (async () => {
+				try {
+					const completion = await getCompletionById(params.id);
+					if (!completion || completion.clerkId === userId) return;
+					await createNotification({
+						userId: completion.userId,
+						type: 'reaction',
+						completionId: completion._id,
+						gameTitle: completion.gameTitle,
+						actorName: result.actorName,
+						preview: REACTION_EMOJI[kind as keyof typeof REACTION_EMOJI]
+					});
+				} catch (error) {
+					console.warn('Reaction notification failed:', error);
+				}
+			})();
 		}
 
 		return {

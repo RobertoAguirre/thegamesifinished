@@ -6,6 +6,8 @@ export type {
 	Reaction,
 	ReactionKind,
 	ReactionTargetType,
+	Notification,
+	NotificationType,
 	Badge,
 	UserBadge,
 	RankTier,

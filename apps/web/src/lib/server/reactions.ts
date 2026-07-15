@@ -99,7 +99,14 @@ export async function toggleReaction(input: {
 	kind: string;
 	clerkId: string;
 }): Promise<
-	| { ok: true; counts: ReactionCounts; viewerReaction: ReactionKind | null }
+	| {
+			ok: true;
+			counts: ReactionCounts;
+			viewerReaction: ReactionKind | null;
+			/** 'added' solo en reacción nueva — para avisos sin spam al alternar. */
+			action: 'added' | 'changed' | 'removed';
+			actorName: string;
+	  }
 	| { ok: false; error: string }
 > {
 	if (!isTargetType(input.targetType)) {
@@ -132,13 +139,16 @@ export async function toggleReaction(input: {
 
 	const existing = await reactions.findOne({ targetType, targetId, clerkId: input.clerkId });
 
+	let action: 'added' | 'changed' | 'removed';
 	if (existing && existing.kind === kind) {
 		await reactions.deleteOne({ _id: existing._id });
+		action = 'removed';
 	} else if (existing) {
 		await reactions.updateOne(
 			{ _id: existing._id },
 			{ $set: { kind, createdAt: new Date() } }
 		);
+		action = 'changed';
 	} else {
 		await reactions.insertOne({
 			targetType,
@@ -148,6 +158,7 @@ export async function toggleReaction(input: {
 			kind,
 			createdAt: new Date()
 		} as Reaction);
+		action = 'added';
 	}
 
 	const snapshot = await getReactionsForTargets(
@@ -158,7 +169,9 @@ export async function toggleReaction(input: {
 	return {
 		ok: true,
 		counts: snapshot.counts[input.targetId] ?? emptyReactionCounts(),
-		viewerReaction: snapshot.viewer[input.targetId] ?? null
+		viewerReaction: snapshot.viewer[input.targetId] ?? null,
+		action,
+		actorName: user.displayName
 	};
 }
 

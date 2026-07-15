@@ -95,6 +95,25 @@ export interface Reaction {
 	createdAt: Date;
 }
 
+export type NotificationType = 'comment' | 'reaction';
+
+/** Aviso para el dueño de una victoria (comentario o reacción recibida). */
+export interface Notification {
+	_id: ObjectId;
+	/** Destinatario (dueño de la victoria). */
+	userId: ObjectId;
+	type: NotificationType;
+	completionId: ObjectId;
+	/** Denormalizado para pintar la lista sin joins. */
+	gameTitle: string;
+	/** Quién comentó o reaccionó. */
+	actorName: string;
+	/** Extracto del comentario o emoji de la reacción. */
+	preview?: string;
+	readAt?: Date;
+	createdAt: Date;
+}
+
 export interface Badge {
 	_id: ObjectId;
 	slug: string;
