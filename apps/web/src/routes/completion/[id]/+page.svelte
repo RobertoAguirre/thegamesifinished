@@ -5,6 +5,7 @@
 	import ReactionBar from '$lib/components/ReactionBar.svelte';
 	import Recommendations from '$lib/components/Recommendations.svelte';
 	import ShareButtons from '$lib/components/ShareButtons.svelte';
+	import ShareModal from '$lib/components/ShareModal.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { track, trackCompletionPageview } from '$lib/analytics/client';
 	import { AnalyticsEvents } from '$lib/analytics/events';
@@ -54,7 +55,22 @@
 	let submitting = $state(false);
 	let addingPlatforms = $state(false);
 
+	const hasCelebration = $derived(
+		Boolean(data.celebration && (data.celebration.badges.length > 0 || data.celebration.rankUp))
+	);
+	// Victoria recién registrada: si hay celebración, el share sale al cerrarla; si no, directo.
+	let showShareModal = $state(false);
+
+	const shareImageUrl = $derived(
+		data.ogImage ??
+			(data.completion.mediaKey
+				? `${data.siteOrigin}/api/media/${data.completion.mediaKey}`
+				: rawgImageSrc(data.completion.gameImageUrl, { width: 1280 }) ??
+					data.completion.gameImageUrl)
+	);
+
 	onMount(() => {
+		if (data.isNew && !hasCelebration) showShareModal = true;
 		void trackCompletionPageview({
 			completionId: data.completion.id,
 			gameTitle: data.completion.gameTitle,
@@ -70,6 +86,21 @@
 		xpGained={data.celebration.xpGained}
 		shareUrl={data.canonicalUrl}
 		displayName={data.completion.displayName}
+		onclose={() => {
+			if (data.isNew) showShareModal = true;
+		}}
+	/>
+{/if}
+
+{#if showShareModal}
+	<ShareModal
+		gameTitle={data.completion.gameTitle}
+		displayName={data.completion.displayName}
+		completionPath="/completion/{data.completion.id}"
+		origin={data.siteOrigin}
+		completionId={data.completion.id}
+		imageUrl={shareImageUrl}
+		onclose={() => (showShareModal = false)}
 	/>
 {/if}
 
@@ -168,11 +199,6 @@
 		</div>
 	</div>
 
-	<Recommendations
-		finishedTitle={data.completion.gameTitle}
-		recommendations={data.recommendations}
-	/>
-
 	{#if data.isOwner && availablePlatforms.length > 0}
 		<section class="mb-6 rounded-2xl border border-border bg-surface p-6">
 			<h2 class="mb-1 text-lg font-semibold">{m.completion_add_platform_title()}</h2>
@@ -221,22 +247,6 @@
 	{/if}
 
 	<section class="mb-6 rounded-2xl border border-border bg-surface p-6">
-		<h2 class="mb-4 text-lg font-semibold">{m.completion_share_title()}</h2>
-		<ShareButtons
-			gameTitle={data.completion.gameTitle}
-			displayName={data.completion.displayName}
-			completionPath="/completion/{data.completion.id}"
-			origin={data.siteOrigin}
-			completionId={data.completion.id}
-			imageUrl={data.ogImage ??
-				(data.completion.mediaKey
-					? `${data.siteOrigin}/api/media/${data.completion.mediaKey}`
-					: rawgImageSrc(data.completion.gameImageUrl, { width: 1280 }) ??
-						data.completion.gameImageUrl)}
-		/>
-	</section>
-
-	<section class="rounded-2xl border border-border bg-surface p-6">
 		<h2 class="mb-4 text-lg font-semibold">{m.completion_comments()}</h2>
 
 		{#if form?.commentError}
@@ -325,6 +335,23 @@
 			</ul>
 		{/if}
 	</section>
+
+	<section class="mb-6 rounded-2xl border border-border bg-surface p-6">
+		<h2 class="mb-4 text-lg font-semibold">{m.completion_share_title()}</h2>
+		<ShareButtons
+			gameTitle={data.completion.gameTitle}
+			displayName={data.completion.displayName}
+			completionPath="/completion/{data.completion.id}"
+			origin={data.siteOrigin}
+			completionId={data.completion.id}
+			imageUrl={shareImageUrl}
+		/>
+	</section>
+
+	<Recommendations
+		finishedTitle={data.completion.gameTitle}
+		recommendations={data.recommendations}
+	/>
 
 	<div class="mt-6">
 		<AdSlot position="completion-below-comments" />

@@ -111,7 +111,9 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 		ogImage,
 		sessionName: sessionUser?.displayName ?? null,
 		isOwner,
-		celebration
+		celebration,
+		// Recién registrada por su dueño → abrir modal de compartir.
+		isNew: isOwner && url.searchParams.get('new') === '1'
 	};
 };
 

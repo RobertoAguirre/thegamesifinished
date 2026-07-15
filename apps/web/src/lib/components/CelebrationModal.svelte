@@ -15,9 +15,11 @@
 		xpGained?: number;
 		shareUrl: string;
 		displayName: string;
+		/** Se llama al cerrar — permite encadenar el modal de compartir. */
+		onclose?: () => void;
 	}
 
-	let { badges, rankUp = null, xpGained = 0, shareUrl, displayName }: Props = $props();
+	let { badges, rankUp = null, xpGained = 0, shareUrl, displayName, onclose }: Props = $props();
 
 	let open = $state(true);
 	let copied = $state(false);
@@ -100,7 +102,10 @@
 				</button>
 				<button
 					type="button"
-					onclick={() => (open = false)}
+					onclick={() => {
+						open = false;
+						onclose?.();
+					}}
 					class="rounded-xl px-4 py-3 text-sm text-muted hover:text-white"
 				>
 					{m.celebration_continue()}

@@ -93,6 +93,8 @@ export const actions: Actions = {
 			});
 
 			const params = new URLSearchParams();
+			// Marca la llegada desde el registro para abrir el modal de compartir.
+			params.set('new', '1');
 			if (progress.unlockedBadges.length || progress.rankUp) {
 				params.set('celebrate', '1');
 				if (progress.unlockedBadges.length) {

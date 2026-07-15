@@ -18,6 +18,7 @@
 	let { finishedTitle, recommendations }: Props = $props();
 
 	function reasonLabel(reason: string): string {
+		if (reason === 'series') return m.rec_reason_series();
 		if (reason === 'genre') return m.rec_reason_genre();
 		if (reason === 'platform') return m.rec_reason_platform();
 		if (reason === 'community') return m.rec_reason_community();

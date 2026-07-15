@@ -7,7 +7,7 @@ const CACHE_TTL_MS = 30 * 60 * 1000;
 const MAX_RESULTS = 4;
 const FETCH_TIMEOUT_MS = 8_000;
 
-export type RecommendationReason = 'similar' | 'genre' | 'platform' | 'community';
+export type RecommendationReason = 'similar' | 'series' | 'genre' | 'platform' | 'community';
 
 export type RecommendedGame = {
 	id: number;
@@ -83,14 +83,23 @@ async function fetchGameDetail(rawgId: number): Promise<RawgDetail | null> {
 	return (await response.json()) as RawgDetail;
 }
 
-async function fetchSuggested(rawgId: number): Promise<RawgGame[]> {
+type RawgListGame = RawgGame & { ratings_count?: number };
+
+/**
+ * Juegos de la misma saga — el mejor señalador disponible en el plan gratis.
+ * (El endpoint /suggested responde 401: es solo del plan Business.)
+ */
+async function fetchSeries(rawgId: number): Promise<RawgGame[]> {
 	const response = await rawgFetch(
-		`/games/${rawgId}/suggested`,
-		new URLSearchParams({ page_size: '8' })
+		`/games/${rawgId}/game-series`,
+		new URLSearchParams({ page_size: '20' })
 	);
 	if (!response?.ok) return [];
-	const data = (await response.json()) as { results?: RawgGame[] };
-	return data.results ?? [];
+	const data = (await response.json()) as { results?: RawgListGame[] };
+	// Los populares primero; fuera demos/mods casi sin votos.
+	return (data.results ?? [])
+		.filter((g) => (g.ratings_count ?? 0) >= 20)
+		.sort((a, b) => (b.ratings_count ?? 0) - (a.ratings_count ?? 0));
 }
 
 async function fetchByGenres(genreIds: number[], excludeId: number): Promise<RawgGame[]> {
@@ -100,11 +109,13 @@ async function fetchByGenres(genreIds: number[], excludeId: number): Promise<Raw
 		new URLSearchParams({
 			genres: genreIds.slice(0, 3).join(','),
 			page_size: '12',
-			ordering: '-rating'
+			// Metacritic alto evita que juegos oscuros con 3 votos de 5★ dominen la lista.
+			metacritic: '75,100',
+			ordering: '-metacritic'
 		})
 	);
 	if (!response?.ok) return [];
-	const data = (await response.json()) as { results?: RawgGame[] };
+	const data = (await response.json()) as { results?: RawgListGame[] };
 	return (data.results ?? []).filter((g) => g.id !== excludeId);
 }
 
@@ -161,9 +172,9 @@ export const rawgRecommendationProvider: RecommendationProvider = {
 		const excludeIds = new Set<number>([rawgId]);
 		const pooled: RecommendedGame[] = [];
 
-		const suggested = await fetchSuggested(rawgId);
-		for (const game of suggested) {
-			pooled.push(toRecommended(game, 'similar'));
+		const series = await fetchSeries(rawgId);
+		for (const game of series) {
+			pooled.push(toRecommended(game, 'series'));
 		}
 
 		if (pooled.length < limit) {
