@@ -176,5 +176,13 @@
 	"add_character_hint": "En pelea, el personaje es parte del registro.",
 	"error_character_required": "Indica el personaje con el que terminaste el juego.",
 	"completion_character": "Personaje: {character}",
-	"card_character": "con {character}"
+	"card_character": "con {character}",
+	"edit_name": "Editar nombre",
+	"edit_name_label": "Nombre para mostrar",
+	"edit_name_hint": "Este es el nombre que aparece en tus logros. Tu @usuario no cambia.",
+	"edit_name_save": "Guardar nombre",
+	"edit_name_saving": "Guardando...",
+	"edit_name_saved": "¡Nombre actualizado!",
+	"edit_name_cancel": "Cancelar",
+	"error_display_name_invalid": "El nombre debe tener entre 2 y 40 caracteres."
 }

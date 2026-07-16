@@ -13,6 +13,8 @@ export interface User {
 	clerkId: string;
 	username: string;
 	displayName: string;
+	/** True when the user set a custom name — Clerk sync must not overwrite it. */
+	displayNameLocked?: boolean;
 	avatarUrl?: string;
 	totalXp?: number;
 	createdAt: Date;

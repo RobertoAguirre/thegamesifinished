@@ -176,5 +176,13 @@
 	"add_character_hint": "For fighters, the character is part of the log.",
 	"error_character_required": "Enter the character you finished the game with.",
 	"completion_character": "Character: {character}",
-	"card_character": "as {character}"
+	"card_character": "as {character}",
+	"edit_name": "Edit name",
+	"edit_name_label": "Display name",
+	"edit_name_hint": "This is the name shown on your wins. Your @username stays the same.",
+	"edit_name_save": "Save name",
+	"edit_name_saving": "Saving...",
+	"edit_name_saved": "Name updated!",
+	"edit_name_cancel": "Cancel",
+	"error_display_name_invalid": "Name must be 2–40 characters."
 }

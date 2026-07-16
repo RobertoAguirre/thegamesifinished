@@ -5,7 +5,7 @@ import {
 	getCompletionsByUser,
 	serializeCompletion
 } from '$lib/server/completions';
-import { getCompletionCount, getUserByClerkId } from '$lib/server/users';
+import { getCompletionCount, getUserByClerkId, updateDisplayName } from '$lib/server/users';
 import { getUserBadges } from '$lib/server/progression/badges';
 import { rankForXp } from '$lib/server/progression/ranks';
 import { isAdmin } from '$lib/server/admin';
@@ -41,6 +41,19 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
+	updateName: async ({ request, locals }) => {
+		const { userId } = locals.auth();
+		if (!userId) return fail(401, { nameError: m.error_signed_in() });
+
+		const form = await request.formData();
+		const displayName = String(form.get('displayName') ?? '');
+
+		const ok = await updateDisplayName(userId, displayName);
+		if (!ok) return fail(400, { nameError: m.error_display_name_invalid() });
+
+		return { nameSuccess: true };
+	},
+
 	delete: async ({ request, locals }) => {
 		const { userId } = locals.auth();
 		if (!userId) return fail(401, { error: m.error_signed_in() });

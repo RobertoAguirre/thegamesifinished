@@ -15,11 +15,13 @@ export async function syncUserFromClerk(auth: { userId: string | null }): Promis
 		existing?.username ??
 		`player-${auth.userId.slice(-8)}`
 	).toLowerCase();
-	const displayName =
-		[clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') ||
-		clerkUser.username ||
-		existing?.displayName ||
-		username;
+	// A custom name set in the dashboard wins over Clerk-derived values.
+	const displayName = existing?.displayNameLocked
+		? existing.displayName
+		: [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') ||
+			clerkUser.username ||
+			existing?.displayName ||
+			username;
 	const avatarUrl = clerkUser.imageUrl ?? existing?.avatarUrl;
 	const now = new Date();
 
@@ -49,6 +51,32 @@ export async function syncUserFromClerk(auth: { userId: string | null }): Promis
 
 	const result = await users.insertOne(doc as User);
 	return { _id: result.insertedId, ...doc };
+}
+
+/**
+ * Set a custom display name. Never touches username / clerkId / ObjectIds.
+ * Also refreshes the denormalized displayName on the user's completions
+ * so public cards show the new name.
+ */
+export async function updateDisplayName(clerkId: string, displayName: string): Promise<boolean> {
+	const name = displayName.trim().replace(/\s+/g, ' ');
+	if (name.length < 2 || name.length > 40) return false;
+
+	const db = await getDb();
+	const users = db.collection<User>('users');
+	const user = await users.findOne({ clerkId });
+	if (!user) return false;
+
+	const now = new Date();
+	await users.updateOne(
+		{ clerkId },
+		{ $set: { displayName: name, displayNameLocked: true, updatedAt: now } }
+	);
+	await db
+		.collection('completions')
+		.updateMany({ userId: user._id }, { $set: { displayName: name } });
+
+	return true;
 }
 
 export async function getUserByClerkId(clerkId: string): Promise<User | null> {

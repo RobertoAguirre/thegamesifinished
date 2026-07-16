@@ -1,12 +1,16 @@
 <script lang="ts">
 	import CompletionCard from '$lib/components/CompletionCard.svelte';
+	import { enhance } from '$app/forms';
 	import { localizeBadge, localizeRankName } from '$lib/i18n/labels';
 	import { m } from '$lib/paraglide/messages.js';
 
-	let { data } = $props();
+	let { data, form } = $props();
 
 	const rankName = $derived(localizeRankName(data.rank.slug, data.rank.name));
 	const badges = $derived(data.badges.map((badge) => (badge ? localizeBadge(badge) : badge)));
+
+	let editingName = $state(false);
+	let savingName = $state(false);
 </script>
 
 <section class="mb-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
@@ -17,7 +21,67 @@
 			<div class="flex h-16 w-16 items-center justify-center rounded-full bg-accent/20 text-2xl">🎮</div>
 		{/if}
 		<div>
-			<h1 class="text-2xl font-bold">{data.user.displayName}</h1>
+			{#if editingName}
+				<form
+					method="POST"
+					action="?/updateName"
+					class="space-y-2"
+					use:enhance={() => {
+						savingName = true;
+						return async ({ result, update }) => {
+							savingName = false;
+							if (result.type === 'success') editingName = false;
+							await update();
+						};
+					}}
+				>
+					<label class="block text-xs text-muted" for="displayName">{m.edit_name_label()}</label>
+					<div class="flex flex-wrap items-center gap-2">
+						<input
+							id="displayName"
+							name="displayName"
+							type="text"
+							required
+							minlength="2"
+							maxlength="40"
+							value={data.user.displayName}
+							class="rounded-xl border border-border bg-bg px-3 py-2 text-lg font-semibold outline-none focus:border-accent"
+						/>
+						<button
+							type="submit"
+							disabled={savingName}
+							class="rounded-full bg-accent px-4 py-2 text-sm font-medium hover:bg-accent-hover disabled:opacity-50 transition-colors"
+						>
+							{savingName ? m.edit_name_saving() : m.edit_name_save()}
+						</button>
+						<button
+							type="button"
+							onclick={() => (editingName = false)}
+							class="text-sm text-muted hover:text-white transition-colors"
+						>
+							{m.edit_name_cancel()}
+						</button>
+					</div>
+					<p class="text-xs text-muted">{m.edit_name_hint()}</p>
+					{#if form?.nameError}
+						<p class="text-xs text-red-400">{form.nameError}</p>
+					{/if}
+				</form>
+			{:else}
+				<h1 class="flex items-center gap-2 text-2xl font-bold">
+					{data.user.displayName}
+					<button
+						type="button"
+						onclick={() => (editingName = true)}
+						class="text-xs font-normal text-muted hover:text-accent transition-colors"
+					>
+						{m.edit_name()}
+					</button>
+				</h1>
+				{#if form?.nameSuccess}
+					<p class="text-xs text-success">{m.edit_name_saved()}</p>
+				{/if}
+			{/if}
 			<p class="text-muted">@{data.user.username}</p>
 			<p class="mt-1 text-sm text-accent">
 				{m.rank_xp_line({ rank: rankName, xp: data.user.totalXp })}
